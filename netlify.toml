@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Single-page app: every path is served by index.html so the public
+# redirect page (/r/:token, Stage 7) and dashboard routes resolve.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

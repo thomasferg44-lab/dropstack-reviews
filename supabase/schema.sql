@@ -22,24 +22,6 @@ as $$
   select translate(encode(gen_random_bytes(18), 'base64'), '+/=', '-_');
 $$;
 
--- The token the *public page* presents, read from the request header
--- `x-review-token` that supabase-js sends on the anon client.
--- Anon RLS policies are scoped to this single token, so an anon caller can
--- never list requests — it can only see the one row whose token it already
--- holds. Returns NULL outside an API request (SQL editor, psql), which makes
--- every anon policy evaluate to false there.
-create or replace function public.reviews_request_token()
-returns text
-language sql
-stable
-set search_path = public
-as $$
-  select nullif(
-    nullif(current_setting('request.headers', true), '')::json ->> 'x-review-token',
-    ''
-  );
-$$;
-
 -- -----------------------------------------------------------------------------
 -- Tables
 -- -----------------------------------------------------------------------------
@@ -79,9 +61,10 @@ create index if not exists reviews_requests_sent_at_idx     on public.reviews_re
 
 -- -----------------------------------------------------------------------------
 -- Anon update guard (trigger)
--- Belt-and-braces on top of the column-level GRANT below: even if a grant is
--- widened by mistake later, anon can still only move clicked_at from NULL to
--- now(), once, and cannot touch any other column.
+-- Defence in depth. In normal operation anon has NO table grants and only reaches
+-- this table through reviews_open_link() (which runs as the owner, so this guard
+-- does not fire for it). If a grant to anon is ever added by mistake, this still
+-- limits anon to moving clicked_at from NULL to now(), once, and nothing else.
 -- -----------------------------------------------------------------------------
 
 create or replace function public.reviews_guard_anon_click()
@@ -143,11 +126,9 @@ grant select, insert, update, delete on table public.reviews_customers to authen
 grant select, insert, update, delete on table public.reviews_jobs      to authenticated;
 grant select, insert, update, delete on table public.reviews_requests  to authenticated;
 
--- Anon (public redirect page): read three columns of one request, and write
--- exactly one column. Nothing on customers or jobs — the business name the
--- page renders comes from companyConfig.js, not the DB.
-grant select (id, token, clicked_at) on table public.reviews_requests to anon;
-grant update (clicked_at)            on table public.reviews_requests to anon;
+-- Anon (public redirect page): NO table privileges at all. Its only door is the
+-- reviews_open_link() function below. The business name the page renders comes
+-- from companyConfig.js, not the DB.
 
 -- -----------------------------------------------------------------------------
 -- Row Level Security
@@ -167,18 +148,50 @@ drop policy if exists reviews_jobs_owner_all on public.reviews_jobs;
 create policy reviews_jobs_owner_all on public.reviews_jobs
   for all to authenticated using (true) with check (true);
 
--- requests: owner full access; anon scoped to the single token it presents.
+-- requests: owner full access.
 drop policy if exists reviews_requests_owner_all on public.reviews_requests;
 create policy reviews_requests_owner_all on public.reviews_requests
   for all to authenticated using (true) with check (true);
 
-drop policy if exists reviews_requests_anon_select on public.reviews_requests;
-create policy reviews_requests_anon_select on public.reviews_requests
-  for select to anon
-  using (token = public.reviews_request_token());
+-- No anon policies exist on any table. With no grant and no policy, anon cannot
+-- read or write a single row directly, even if a policy is later mis-written.
 
-drop policy if exists reviews_requests_anon_stamp on public.reviews_requests;
-create policy reviews_requests_anon_stamp on public.reviews_requests
-  for update to anon
-  using (token = public.reviews_request_token())
-  with check (token = public.reviews_request_token());
+-- -----------------------------------------------------------------------------
+-- Public-page RPC: the ONLY thing anon can call.
+-- Stamps clicked_at once (first open only) and reports whether the token exists.
+-- Returns a bare boolean: nothing about the customer, job or request leaks.
+-- SECURITY DEFINER runs as the table owner, so the anon caller needs no grants.
+-- -----------------------------------------------------------------------------
+
+create or replace function public.reviews_open_link(p_token text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_found boolean;
+begin
+  if p_token is null or length(p_token) < 8 or length(p_token) > 128 then
+    return false;
+  end if;
+
+  -- First open: stamp with server time. Later opens match zero rows (no-op).
+  update public.reviews_requests
+     set clicked_at = now()
+   where token = p_token
+     and clicked_at is null;
+
+  select exists (select 1 from public.reviews_requests where token = p_token)
+    into v_found;
+  return v_found;
+end;
+$$;
+
+-- Functions are executable by PUBLIC by default. Lock them down explicitly.
+-- reviews_new_token() is the token column default, so the owner (who inserts
+-- requests) must keep EXECUTE on it; anon does not need it.
+revoke all on function public.reviews_open_link(text) from public;
+revoke all on function public.reviews_new_token()     from public;
+grant execute on function public.reviews_open_link(text) to anon, authenticated;
+grant execute on function public.reviews_new_token()     to authenticated;

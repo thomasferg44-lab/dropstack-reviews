@@ -34,17 +34,20 @@ can read nothing.
 
 ## How the public link is locked down (read before changing schema.sql)
 
-The public redirect page (`/r/:token`, Stage 7) calls Supabase with the anon key and
-sends the token in an `x-review-token` request header. The anon RLS policies on
-`reviews_requests` only match the row whose `token` equals that header, so an anon
-caller can never list requests or guess its way to another customer's link.
-Anon has a column-level grant to read `id, token, clicked_at` and to update
-`clicked_at` only, and a trigger (`reviews_guard_anon_click`) additionally forces
-`clicked_at` to move from NULL to server `now()` exactly once. The trigger checks
-`current_user`, not `auth.role()` — the latter is NULL outside an API request and
-would make `verify-rls.sql` pass against a broken guard.
+The anon role has **zero grants** on every `reviews_*` table and no RLS policies.
+The public redirect page (`/r/:token`, Stage 7) calls one thing: the RPC
+`reviews_open_link(token)`. It is `SECURITY DEFINER` (runs as the table owner),
+stamps `clicked_at` with server time on the first open only, and returns a bare
+boolean saying whether the token exists. Nothing about the customer, job or
+request is returned. The token column defaults to 24 URL-safe random characters.
 
-`supabase/verify-rls.sql` has 15 checks and prints one PASS/FAIL row each. It creates
+A defence-in-depth trigger (`reviews_guard_anon_click`) stays on the table: it does
+not fire in normal operation, but if a grant to anon is ever added by mistake it still
+limits anon to moving `clicked_at` from NULL to now(), once. It checks `current_user`,
+not `auth.role()` — the latter is NULL outside an API request and would make
+`verify-rls.sql` pass against a broken guard.
+
+`supabase/verify-rls.sql` has 13 checks and prints one PASS/FAIL row each. It creates
 and removes its own test rows and is safe to re-run.
 
 ## Build status

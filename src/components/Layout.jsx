@@ -4,6 +4,9 @@ import { Button } from "./ui.jsx";
 
 // Tabs per spec. Only Customers is wired in Stage 1; the rest are placeholders
 // so the shell doesn't need restructuring later.
+// Bump as stages land so tabs unlock without touching the markup.
+export const CURRENT_STAGE = 2;
+
 export const TABS = [
   { id: "queue", label: "Ask now", stage: 5 },
   { id: "customers", label: "Customers", stage: 1 },
@@ -25,7 +28,7 @@ export default function Layout({ tab, onTab, children }) {
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4" aria-label="Sections">
           {TABS.map((t) => {
             const active = t.id === tab;
-            const enabled = t.stage <= 1;
+            const enabled = t.stage <= CURRENT_STAGE;
             return (
               <button
                 key={t.id}

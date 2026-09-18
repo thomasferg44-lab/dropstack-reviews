@@ -18,3 +18,29 @@ export function formatPhone(value) {
   }
   return value;
 }
+
+// Storage normalisation. South African numbers become +27XXXXXXXXX so the
+// unique(phone) constraint catches "082..." vs "+27 82..." duplicates.
+// Anything else is stored as digits with a leading + if it had one.
+export function normalisePhone(value) {
+  if (!value) return null;
+  let v = String(value).trim().replace(/[\s\-().]/g, "");
+  if (!v) return null;
+  if (v.startsWith("00")) v = "+" + v.slice(2);
+  if (/^0\d{9}$/.test(v)) return "+27" + v.slice(1);
+  if (/^27\d{9}$/.test(v)) return "+" + v;
+  if (/^\+27\d{9}$/.test(v)) return v;
+  if (/^\+\d{7,15}$/.test(v)) return v;
+  if (/^\d{7,15}$/.test(v)) return "+" + v;
+  return v; // leave odd input alone; the form flags it
+}
+
+export function isPlausiblePhone(value) {
+  const n = normalisePhone(value);
+  return n === null || /^\+\d{7,15}$/.test(n);
+}
+
+export function normaliseEmail(value) {
+  const v = String(value ?? "").trim().toLowerCase();
+  return v || null;
+}

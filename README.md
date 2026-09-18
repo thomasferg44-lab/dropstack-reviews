@@ -52,7 +52,7 @@ and removes its own test rows and is safe to re-run.
 
 ## Build status
 
-**Stage 1 done** (scaffold, schema + RLS, verify script, customers list). Stage 2 next.
+**Stage 2 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers list/add/edit). Stage 3 (CSV import) next.
 
 **v1 in progress.** See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
 

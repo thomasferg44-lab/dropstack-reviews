@@ -188,10 +188,15 @@ begin
 end;
 $$;
 
--- Functions are executable by PUBLIC by default. Lock them down explicitly.
+-- Lock function privileges down explicitly. Two separate things to undo:
+--   1. Postgres grants EXECUTE on new functions to PUBLIC.
+--   2. Supabase's default privileges ALSO grant EXECUTE directly to anon,
+--      authenticated and service_role. Revoking from PUBLIC alone leaves those
+--      direct grants in place (verify-rls check 11 catches this).
 -- reviews_new_token() is the token column default, so the owner (who inserts
--- requests) must keep EXECUTE on it; anon does not need it.
-revoke all on function public.reviews_open_link(text) from public;
-revoke all on function public.reviews_new_token()     from public;
+-- requests) keeps EXECUTE on it; anon does not need it.
+revoke all on function public.reviews_open_link(text)    from public, anon, authenticated;
+revoke all on function public.reviews_new_token()        from public, anon, authenticated;
+revoke all on function public.reviews_guard_anon_click() from public, anon, authenticated;
 grant execute on function public.reviews_open_link(text) to anon, authenticated;
 grant execute on function public.reviews_new_token()     to authenticated;

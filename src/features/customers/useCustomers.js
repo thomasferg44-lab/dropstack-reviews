@@ -61,5 +61,27 @@ export function useCustomers() {
     return { error: null, customer: data };
   }, []);
 
-  return { customers, loading, error, refresh, addCustomer, updateCustomer };
+  // Bulk insert. Rows whose phone already exists are skipped (ON CONFLICT DO
+  // NOTHING on phone) and reported, never overwritten. Returns counts + the
+  // rows that were skipped as already-existing, so the UI can list them.
+  const importCustomers = useCallback(async (rows) => {
+    const CHUNK = 200;
+    let inserted = 0;
+    const existing = [];
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK).map(toRow);
+      const { data, error } = await supabase
+        .from("reviews_customers")
+        .upsert(chunk, { onConflict: "phone", ignoreDuplicates: true })
+        .select("id, name, phone, email, created_at");
+      if (error) return { error: friendlyError(error), inserted, existing };
+      inserted += data.length;
+      const got = new Set(data.map((d) => d.phone).filter(Boolean));
+      chunk.forEach((c) => { if (c.phone && !got.has(c.phone)) existing.push(c); });
+    }
+    await refresh();
+    return { error: null, inserted, existing };
+  }, [refresh]);
+
+  return { customers, loading, error, refresh, addCustomer, updateCustomer, importCustomers };
 }

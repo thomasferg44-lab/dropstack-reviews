@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useCustomers } from "./useCustomers.js";
 import CustomerForm from "./CustomerForm.jsx";
+import ImportCustomers from "./ImportCustomers.jsx";
 import { formatDate, formatPhone } from "../../lib/format.js";
 import { Input, Card, EmptyState, ErrorNotice, Spinner, Button, Modal } from "../../components/ui.jsx";
 
 export default function CustomersList() {
-  const { customers, loading, error, refresh, addCustomer, updateCustomer } = useCustomers();
+  const { customers, loading, error, refresh, addCustomer, updateCustomer, importCustomers } = useCustomers();
   const [query, setQuery] = useState("");
-  // null = closed, "new" = adding, otherwise the customer row being edited
+  // null = closed, "new" = adding, "import" = CSV import, otherwise the customer row being edited
   const [editing, setEditing] = useState(null);
 
   async function handleSubmit(input) {
@@ -44,11 +45,18 @@ export default function CustomersList() {
           <Button variant="ghost" onClick={refresh} disabled={loading} aria-label="Refresh">
             {loading ? <Spinner /> : "Refresh"}
           </Button>
+          <Button variant="secondary" onClick={() => setEditing("import")}>Import CSV</Button>
           <Button variant="primary" onClick={() => setEditing("new")}>Add</Button>
         </div>
       </div>
 
-      {editing && (
+      {editing === "import" && (
+        <Modal title="Import customers from CSV" size="lg" onClose={() => setEditing(null)}>
+          <ImportCustomers onImport={importCustomers} onDone={() => setEditing(null)} />
+        </Modal>
+      )}
+
+      {editing && editing !== "import" && (
         <Modal title={editing === "new" ? "Add customer" : "Edit customer"} onClose={() => setEditing(null)}>
           <CustomerForm
             key={editing === "new" ? "new" : editing.id}
@@ -64,7 +72,7 @@ export default function CustomersList() {
       {!loading && !error && customers.length === 0 && (
         <EmptyState
           title="No customers yet"
-          body="Add your first customer above. CSV import comes in the next stage."
+          body="Add one above, or import your contact list from a CSV."
         />
       )}
 

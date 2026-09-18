@@ -356,6 +356,31 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
+-- 15. two customers with no phone can coexist (unique(phone) treats NULLs as
+--     distinct), while two customers with the same phone cannot
+-- -----------------------------------------------------------------------------
+do $$
+declare v_a uuid; v_b uuid; v_nulls_ok boolean := false; v_dup_blocked boolean := false; v_detail text := '';
+begin
+  begin
+    insert into public.reviews_customers (name, email) values ('RLS VERIFY nophone 1', 'a@example.com') returning id into v_a;
+    insert into public.reviews_customers (name, email) values ('RLS VERIFY nophone 2', 'b@example.com') returning id into v_b;
+    v_nulls_ok := true;
+  exception when others then
+    v_detail := 'second email-only customer rejected: ' || sqlerrm || '; ';
+  end;
+  begin
+    insert into public.reviews_customers (name, phone) values ('RLS VERIFY dup', '+27000000000');
+    v_detail := v_detail || 'duplicate phone was NOT rejected; ';
+  exception when unique_violation then
+    v_dup_blocked := true;
+  end;
+  delete from public.reviews_customers where name like 'RLS VERIFY nophone%';
+  perform pg_temp.reviews_verify_record(15, 'unique(phone) allows many empty phones, blocks a duplicate phone',
+    v_nulls_ok and v_dup_blocked, coalesce(nullif(v_detail, ''), 'ok'));
+end $$;
+
+-- -----------------------------------------------------------------------------
 -- Cleanup + results
 -- -----------------------------------------------------------------------------
 reset role;

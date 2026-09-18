@@ -5,7 +5,7 @@ import { Button } from "./ui.jsx";
 // Tabs per spec. Only Customers is wired in Stage 1; the rest are placeholders
 // so the shell doesn't need restructuring later.
 // Bump as stages land so tabs unlock without touching the markup.
-export const CURRENT_STAGE = 2;
+export const CURRENT_STAGE = 3;
 
 export const TABS = [
   { id: "queue", label: "Ask now", stage: 5 },

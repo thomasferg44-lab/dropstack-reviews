@@ -32,7 +32,10 @@ create table if not exists public.reviews_customers (
   phone       text,
   email       text,
   created_at  timestamptz not null default now(),
-  unique nulls not distinct (phone)   -- prevent obvious duplicates
+  -- Prevent obvious duplicates. NULLs must stay DISTINCT here: with
+  -- "nulls not distinct" only ONE customer could ever have an empty phone,
+  -- which breaks importing any list with two email-only contacts.
+  constraint reviews_customers_phone_key unique (phone)
 );
 
 create table if not exists public.reviews_jobs (
@@ -53,6 +56,23 @@ create table if not exists public.reviews_requests (
   clicked_at    timestamptz,          -- "link opened". NOT "reviewed" — Google gives no such signal.
   created_at    timestamptz not null default now()
 );
+
+-- If the table was created by an earlier version of this file with
+-- "unique nulls not distinct (phone)", swap the constraint (idempotent):
+do $$
+begin
+  if exists (select 1 from pg_constraint
+              where conrelid = 'public.reviews_customers'::regclass
+                and contype = 'u' and conkey = array[
+                  (select attnum from pg_attribute where attrelid = 'public.reviews_customers'::regclass and attname = 'phone')]
+                and pg_get_constraintdef(oid) ilike '%nulls not distinct%') then
+    execute (select format('alter table public.reviews_customers drop constraint %I', conname)
+               from pg_constraint
+              where conrelid = 'public.reviews_customers'::regclass and contype = 'u'
+                and pg_get_constraintdef(oid) ilike '%nulls not distinct%' limit 1);
+    alter table public.reviews_customers add constraint reviews_customers_phone_key unique (phone);
+  end if;
+end $$;
 
 create index if not exists reviews_jobs_customer_id_idx     on public.reviews_jobs (customer_id);
 create index if not exists reviews_jobs_completed_at_idx    on public.reviews_jobs (completed_at);

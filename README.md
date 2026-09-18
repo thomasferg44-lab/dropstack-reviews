@@ -47,7 +47,7 @@ limits anon to moving `clicked_at` from NULL to now(), once. It checks `current_
 not `auth.role()` — the latter is NULL outside an API request and would make
 `verify-rls.sql` pass against a broken guard.
 
-`supabase/verify-rls.sql` has 13 checks and prints one PASS/FAIL row each. It creates
+`supabase/verify-rls.sql` has 14 checks and prints one PASS/FAIL row each. It creates
 and removes its own test rows and is safe to re-run.
 
 ## Build status

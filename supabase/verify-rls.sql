@@ -327,6 +327,35 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
+-- 14. no reviews_* function is executable by anon or PUBLIC except the one
+--     intended public door. Catches the Supabase default-privilege trap for any
+--     function added later: Supabase grants EXECUTE directly to anon/authenticated
+--     on every new public function, and `revoke ... from public` does not undo that.
+-- -----------------------------------------------------------------------------
+do $$
+declare v_bad text := ''; v_total int := 0; r record;
+begin
+  for r in
+    select p.oid::regprocedure::text as sig, p.proname
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname like 'reviews\_%'
+  loop
+    v_total := v_total + 1;
+    if has_function_privilege('anon', r.sig, 'execute') and r.proname <> 'reviews_open_link' then
+      v_bad := v_bad || r.sig || ' (anon); ';
+    end if;
+    if has_function_privilege('public', r.sig, 'execute') then
+      v_bad := v_bad || r.sig || ' (PUBLIC); ';
+    end if;
+  end loop;
+  perform pg_temp.reviews_verify_record(14, 'no reviews_* function is executable by anon or PUBLIC except open_link',
+    v_bad = '' and v_total >= 3,
+    case when v_bad = '' then format('%s functions checked, all locked down', v_total)
+         else 'stray EXECUTE grants: ' || v_bad end);
+end $$;
+
+-- -----------------------------------------------------------------------------
 -- Cleanup + results
 -- -----------------------------------------------------------------------------
 reset role;

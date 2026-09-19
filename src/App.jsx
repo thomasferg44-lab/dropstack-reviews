@@ -4,6 +4,7 @@ import LoginForm from "./components/LoginForm.jsx";
 import Layout from "./components/Layout.jsx";
 import CustomersList from "./features/customers/CustomersList.jsx";
 import JobsList from "./features/jobs/JobsList.jsx";
+import AskQueue from "./features/queue/AskQueue.jsx";
 import { Card } from "./components/ui.jsx";
 
 function SetupNotice() {
@@ -23,7 +24,8 @@ function SetupNotice() {
 
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = still checking
-  const [tab, setTab] = useState("customers");
+  // "Ask now" is the default view: it is the point of the product.
+  const [tab, setTab] = useState("queue");
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -38,6 +40,7 @@ export default function App() {
 
   return (
     <Layout tab={tab} onTab={setTab}>
+      {tab === "queue" && <AskQueue />}
       {tab === "customers" && <CustomersList />}
       {tab === "jobs" && <JobsList />}
     </Layout>

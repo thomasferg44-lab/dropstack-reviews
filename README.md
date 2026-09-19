@@ -25,6 +25,30 @@ Secrets live in `.env` (copy from `.env.example`). Never commit it.
 
 All client-specific values live in `companyConfig.js`. A new client deploy is: fork/copy this repo, swap `companyConfig.js`, create a fresh Supabase project and run `schema.sql`, connect a new Netlify site, point the domain. No code changes.
 
+## Tests
+
+`npm test` runs the cooldown and eligibility unit tests with Node's built-in
+runner. No test dependency. These cover the rules that decide who gets asked,
+including the cooldown boundary and the repeat-ask guard.
+
+## Who the queue surfaces
+
+A customer appears in "Ask now" when all of these hold:
+
+1. They have a job completed on or before today.
+2. That job is newer than the last request sent to them, or they have never been asked.
+3. Their last request was sent at least `cooldownDays` ago, or never.
+
+Rule 2 is stricter than a literal reading of the spec, which would resurface a
+customer every cooldown period even with no new work. That is the nagging the
+cooldown guard exists to prevent, so a *new completed job* is what re-qualifies
+someone. Change it in `src/features/queue/eligibility.js` if you disagree; the
+tests pin the current behaviour.
+
+Nobody is dropped silently. Customers held back are listed under "Show hidden
+customers" with the reason, and anyone with a finished job but no phone or email
+is called out separately so the gap is visible.
+
 ## Owner login
 
 There is no signup page. Create the single owner account in the Supabase dashboard
@@ -52,7 +76,7 @@ and removes its own test rows and is safe to re-run.
 
 ## Build status
 
-**Stage 4 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers list/add/edit, CSV import, jobs). Stage 5 ("Ask now" queue with cooldown) next.
+**Stage 5 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers list/add/edit, CSV import, jobs, "Ask now" queue with cooldown). Stage 6 (wa.me links + template rendering) next.
 
 **v1 in progress.** See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
 

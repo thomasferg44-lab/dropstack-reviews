@@ -3,6 +3,7 @@ import { supabase, isConfigured } from "./lib/supabase.js";
 import LoginForm from "./components/LoginForm.jsx";
 import Layout from "./components/Layout.jsx";
 import CustomersList from "./features/customers/CustomersList.jsx";
+import JobsList from "./features/jobs/JobsList.jsx";
 import { Card } from "./components/ui.jsx";
 
 function SetupNotice() {
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <Layout tab={tab} onTab={setTab}>
       {tab === "customers" && <CustomersList />}
+      {tab === "jobs" && <JobsList />}
     </Layout>
   );
 }

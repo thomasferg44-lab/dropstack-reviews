@@ -3,8 +3,13 @@
 -- Run in the Supabase SQL editor AFTER schema.sql, as the default postgres role.
 -- Output: one row per check with PASS / FAIL. Every row must be PASS.
 --
--- It creates its own throwaway test rows (customer "RLS VERIFY", phone
--- +27000000000) and deletes them at the end. Safe to re-run.
+-- It creates its own throwaway test rows (customer "RLS VERIFY") and deletes
+-- them at the end. Safe to re-run against a database that already has data.
+--
+-- Fixture phone values are deliberately NON-NUMERIC sentinels, not +27000000000.
+-- That number is this project's standard test number, so a real customer row may
+-- already hold it, and a numeric fixture would either collide with it (crashing
+-- this script on a unique violation) or delete the owner's own test data.
 --
 -- Why current_user and not auth.role():
 --   auth.role() is derived from the API JWT. Here there is no API request, so
@@ -37,10 +42,15 @@ $$;
 -- Fixtures (inserted as postgres, who owns the tables and bypasses RLS)
 -- -----------------------------------------------------------------------------
 reset role;
-delete from public.reviews_customers where id = '00000000-0000-4000-8000-0000000000c0';
+-- Clear anything left by an interrupted earlier run. Only ever touches rows this
+-- script created: the fixed fixture id, or the sentinel phone values below.
+delete from public.reviews_customers
+ where id = '00000000-0000-4000-8000-0000000000c0'
+    or phone in ('RLS-VERIFY-FIXTURE', 'RLS-VERIFY-FIXTURE-2')
+    or name like 'RLS VERIFY%';
 
 insert into public.reviews_customers (id, name, phone, email)
-values ('00000000-0000-4000-8000-0000000000c0', 'RLS VERIFY', '+27000000000', 'test@example.com');
+values ('00000000-0000-4000-8000-0000000000c0', 'RLS VERIFY', 'RLS-VERIFY-FIXTURE', 'test@example.com');
 
 insert into public.reviews_jobs (id, customer_id, description, completed_at)
 values ('00000000-0000-4000-8000-0000000000b0', '00000000-0000-4000-8000-0000000000c0', 'verify job', now());
@@ -296,7 +306,7 @@ begin
     select count(*) into v_j from public.reviews_jobs      where customer_id = '00000000-0000-4000-8000-0000000000c0';
     select count(*) into v_r from public.reviews_requests  where customer_id = '00000000-0000-4000-8000-0000000000c0';
 
-    insert into public.reviews_customers (name, phone) values ('RLS VERIFY 2', '+27000000001') returning id into v_new;
+    insert into public.reviews_customers (name, phone) values ('RLS VERIFY 2', 'RLS-VERIFY-FIXTURE-2') returning id into v_new;
     update public.reviews_customers set name = 'RLS VERIFY 2 (edited)' where id = v_new;
     insert into public.reviews_requests (customer_id, channel) values (v_new, 'email') returning token into v_tok;
     update public.reviews_requests set sent_at = now() where token = v_tok;
@@ -370,7 +380,7 @@ begin
     v_detail := 'second email-only customer rejected: ' || sqlerrm || '; ';
   end;
   begin
-    insert into public.reviews_customers (name, phone) values ('RLS VERIFY dup', '+27000000000');
+    insert into public.reviews_customers (name, phone) values ('RLS VERIFY dup', 'RLS-VERIFY-FIXTURE');
     v_detail := v_detail || 'duplicate phone was NOT rejected; ';
   exception when unique_violation then
     v_dup_blocked := true;
@@ -384,7 +394,10 @@ end $$;
 -- Cleanup + results
 -- -----------------------------------------------------------------------------
 reset role;
-delete from public.reviews_customers where id = '00000000-0000-4000-8000-0000000000c0';
+delete from public.reviews_customers
+ where id = '00000000-0000-4000-8000-0000000000c0'
+    or phone in ('RLS-VERIFY-FIXTURE', 'RLS-VERIFY-FIXTURE-2')
+    or name like 'RLS VERIFY%';
 
 select n, "check", status, detail
 from pg_temp.reviews_verify

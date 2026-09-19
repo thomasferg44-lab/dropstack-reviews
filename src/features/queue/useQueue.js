@@ -37,5 +37,27 @@ export function useQueue() {
     [data]
   );
 
-  return { ...queue, loading, error, refresh };
+  // Creates the request row and stamps sent_at. The token comes back from the
+  // database default, and the tracked link is built from it.
+  const createRequest = useCallback(async ({ customerId, jobId, channel }) => {
+    const { data: row, error } = await supabase
+      .from("reviews_requests")
+      .insert({ customer_id: customerId, job_id: jobId ?? null, channel, sent_at: new Date().toISOString() })
+      .select("id, token, customer_id, job_id, channel, sent_at")
+      .single();
+    if (error) return { error: error.message };
+    setData((prev) => ({ ...prev, requests: [...prev.requests, row] }));
+    return { error: null, request: row };
+  }, []);
+
+  // Used when the owner says they did not actually send it, so the cooldown
+  // does not hide a customer who was never contacted.
+  const undoRequest = useCallback(async (id) => {
+    const { error } = await supabase.from("reviews_requests").delete().eq("id", id);
+    if (error) return { error: error.message };
+    setData((prev) => ({ ...prev, requests: prev.requests.filter((r) => r.id !== id) }));
+    return { error: null };
+  }, []);
+
+  return { ...queue, loading, error, refresh, createRequest, undoRequest, sentCount: data.requests.length };
 }

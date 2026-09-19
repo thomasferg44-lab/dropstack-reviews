@@ -31,6 +31,23 @@ All client-specific values live in `companyConfig.js`. A new client deploy is: f
 runner. No test dependency. These cover the rules that decide who gets asked,
 including the cooldown boundary and the repeat-ask guard.
 
+## Sending a request
+
+Clicking **WhatsApp** on a queue row creates a `reviews_requests` row, stamps
+`sent_at`, and takes the token the database generated to build the tracked link
+`/r/<token>`. The rendered message and a real `Open WhatsApp` anchor then appear
+for review before anything goes out.
+
+It is an anchor, not a scripted `window.open`, because popup blockers silently
+discard windows opened after an `await` — the owner would click and see nothing.
+
+Because a click marks the customer as asked, the panel carries an **Undo** that
+deletes the request row. Without it, opening WhatsApp and then changing your mind
+would hide that customer for the whole cooldown period.
+
+Message variants rotate by how many requests have been sent, so consecutive sends
+do not read identically.
+
 ## Who the queue surfaces
 
 A customer appears in "Ask now" when all of these hold:
@@ -76,7 +93,7 @@ and removes its own test rows and is safe to re-run.
 
 ## Build status
 
-**Stage 5 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers list/add/edit, CSV import, jobs, "Ask now" queue with cooldown). Stage 6 (wa.me links + template rendering) next.
+**Stage 6 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers, CSV import, jobs, "Ask now" queue with cooldown, wa.me links + template rendering). Stage 7 (public redirect page) next.
 
 **v1 in progress.** See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
 

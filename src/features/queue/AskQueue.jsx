@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQueue } from "./useQueue.js";
 import { SUPPRESSION_LABELS } from "./eligibility.js";
+import SendPanel from "./SendPanel.jsx";
 import { companyConfig } from "../../../companyConfig.js";
 import { formatDate } from "../../lib/format.js";
-import { Card, EmptyState, ErrorNotice, Spinner, Button, Badge } from "../../components/ui.jsx";
+import { buildWhatsappMessage, buildTrackedLink } from "../../lib/templates.js";
+import { Card, EmptyState, ErrorNotice, Spinner, Button, Badge, Modal } from "../../components/ui.jsx";
 
 function daysWaiting(completedAt) {
   const days = Math.floor((Date.now() - new Date(completedAt).getTime()) / 86400000);
@@ -15,7 +17,7 @@ function daysWaiting(completedAt) {
 // Every row below gets the same two buttons and, from Stage 6, the same public
 // review link. There is no satisfaction question in this flow by design — see
 // the review-gating section of CLAUDE.md.
-function AskRow({ entry }) {
+function AskRow({ entry, onWhatsapp, busy }) {
   const { customer, job } = entry;
   return (
     <Card className="p-4">
@@ -27,12 +29,12 @@ function AskRow({ entry }) {
         </div>
         <div className="flex shrink-0 gap-2">
           <Button
-            variant="secondary"
-            disabled
-            title="WhatsApp link generation lands in Stage 6"
+            variant="primary"
+            onClick={() => onWhatsapp(entry)}
+            disabled={busy}
             aria-label={`Ask ${customer.name} by WhatsApp`}
           >
-            WhatsApp
+            {busy ? "Preparing…" : "WhatsApp"}
           </Button>
           <Button
             variant="secondary"
@@ -49,10 +51,52 @@ function AskRow({ entry }) {
 }
 
 export default function AskQueue() {
-  const { ready, suppressed, loading, error, refresh } = useQueue();
+  const { ready, suppressed, loading, error, refresh, createRequest, undoRequest, sentCount } = useQueue();
   const [showHidden, setShowHidden] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [sendError, setSendError] = useState("");
+  const [send, setSend] = useState(null);
 
   const noContact = suppressed.filter((s) => s.reason === "no-contact");
+  const reviewUrlMissing = !String(companyConfig.reviewUrl ?? "").trim();
+
+  async function handleWhatsapp(entry) {
+    setSendError("");
+    setBusyId(entry.customer.id);
+    // Create the row first: the tracked link needs the token the database generates.
+    const { request, error } = await createRequest({
+      customerId: entry.customer.id,
+      jobId: entry.job.id,
+      channel: "whatsapp",
+    });
+    if (error) {
+      setBusyId(null);
+      return setSendError(`Couldn't create the request: ${error}`);
+    }
+    const reviewLink = buildTrackedLink(window.location.origin, request.token);
+    const built = buildWhatsappMessage({
+      customer: entry.customer,
+      job: entry.job,
+      businessName: companyConfig.businessName,
+      templates: companyConfig.templates?.whatsapp,
+      reviewLink,
+      seed: sentCount,
+    });
+    setBusyId(null);
+    if (built.error) {
+      // Nothing was sent, so do not leave a request row behind inflating the stats.
+      await undoRequest(request.id);
+      return setSendError(built.error);
+    }
+    setSend({ ...built, reviewLink, requestId: request.id, customerName: entry.customer.name });
+  }
+
+  async function handleUndo() {
+    if (!send) return;
+    const { error } = await undoRequest(send.requestId);
+    setSend(null);
+    if (error) setSendError(`Couldn't undo: ${error}`);
+  }
 
   return (
     <section className="space-y-4">
@@ -68,9 +112,20 @@ export default function AskQueue() {
         </Button>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text-mute">
-        Sending is wired up in the next stage. This stage decides <em>who</em> to ask.
-      </div>
+      {reviewUrlMissing && (
+        <ErrorNotice>
+          No Google review link is set. Put the client’s review URL into <code>reviewUrl</code> in companyConfig.js
+          before sending anything — until then the tracked link has nowhere to send people.
+        </ErrorNotice>
+      )}
+
+      {sendError && <ErrorNotice>{sendError}</ErrorNotice>}
+
+      {send && (
+        <Modal title="Send this on WhatsApp" onClose={() => setSend(null)}>
+          <SendPanel send={send} onUndo={handleUndo} onClose={() => setSend(null)} />
+        </Modal>
+      )}
 
       {error && <ErrorNotice>Couldn’t build the queue: {error}</ErrorNotice>}
 
@@ -88,7 +143,9 @@ export default function AskQueue() {
       {ready.length > 0 && (
         <ul className="space-y-2">
           {ready.map((entry) => (
-            <li key={entry.customer.id}><AskRow entry={entry} /></li>
+            <li key={entry.customer.id}>
+              <AskRow entry={entry} onWhatsapp={handleWhatsapp} busy={busyId === entry.customer.id || reviewUrlMissing} />
+            </li>
           ))}
         </ul>
       )}

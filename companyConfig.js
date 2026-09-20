@@ -15,6 +15,11 @@ export const companyConfig = {
   // no gating, no sentiment pre-screen (see CLAUDE.md).
   reviewUrl: "",
 
+  // Sender for the email channel. The domain must be verified in Resend, or
+  // sends are rejected. Not a secret — the Resend API key lives in .env.
+  fromEmail: "reviews@exampleplumbing.co.za",
+  replyToEmail: "",   // optional; replies go to fromEmail when blank
+
   // Never surface a customer in the "Ask now" queue if they were asked
   // within this many days.
   cooldownDays: 90,

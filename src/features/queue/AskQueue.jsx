@@ -5,6 +5,7 @@ import SendPanel from "./SendPanel.jsx";
 import { companyConfig } from "../../../companyConfig.js";
 import { formatDate } from "../../lib/format.js";
 import { buildWhatsappMessage, buildTrackedLink } from "../../lib/templates.js";
+import { supabase } from "../../lib/supabase.js";
 import { Card, EmptyState, ErrorNotice, Spinner, Button, Badge, Modal } from "../../components/ui.jsx";
 
 function daysWaiting(completedAt) {
@@ -17,7 +18,7 @@ function daysWaiting(completedAt) {
 // Every row below gets the same two buttons and, from Stage 6, the same public
 // review link. There is no satisfaction question in this flow by design — see
 // the review-gating section of CLAUDE.md.
-function AskRow({ entry, onWhatsapp, busy }) {
+function AskRow({ entry, onWhatsapp, onEmail, busy }) {
   const { customer, job } = entry;
   return (
     <Card className="p-4">
@@ -38,8 +39,9 @@ function AskRow({ entry, onWhatsapp, busy }) {
           </Button>
           <Button
             variant="secondary"
-            disabled
-            title="Email sending lands in Stage 8"
+            onClick={() => onEmail(entry)}
+            disabled={busy || !customer.email}
+            title={customer.email ? undefined : `${customer.name} has no email address`}
             aria-label={`Ask ${customer.name} by email`}
           >
             Email
@@ -55,6 +57,7 @@ export default function AskQueue() {
   const [showHidden, setShowHidden] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [sendError, setSendError] = useState("");
+  const [notice, setNotice] = useState("");
   const [send, setSend] = useState(null);
 
   const noContact = suppressed.filter((s) => s.reason === "no-contact");
@@ -91,6 +94,50 @@ export default function AskQueue() {
     setSend({ ...built, reviewLink, requestId: request.id, customerName: entry.customer.name });
   }
 
+  async function handleEmail(entry) {
+    setSendError("");
+    setNotice("");
+    setBusyId(entry.customer.id);
+
+    const { request, error } = await createRequest({
+      customerId: entry.customer.id,
+      jobId: entry.job.id,
+      channel: "email",
+    });
+    if (error) {
+      setBusyId(null);
+      return setSendError(`Couldn't create the request: ${error}`);
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/.netlify/functions/send-review-request", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          // The function re-reads the row with this token, so RLS decides.
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ requestId: request.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `Send failed (${res.status}).`);
+      setNotice(
+        body.blocked
+          ? `Development mode: nothing was actually emailed. It would have gone to ${body.to}. Set DEV_BLOCK_REAL_SENDS=false in Netlify to send for real.`
+          : `Emailed ${body.to}.`
+      );
+    } catch (err) {
+      // The send failed, so do not leave a row claiming it was sent.
+      await undoRequest(request.id);
+      setSendError(
+        `${err.message} The request was rolled back, so ${entry.customer.name} is still in the queue.`
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleUndo() {
     if (!send) return;
     const { error } = await undoRequest(send.requestId);
@@ -121,6 +168,12 @@ export default function AskQueue() {
 
       {sendError && <ErrorNotice>{sendError}</ErrorNotice>}
 
+      {notice && (
+        <div className="rounded-lg border border-accent-1/40 bg-accent-1/10 px-3 py-2 text-sm text-accent-1">
+          {notice}
+        </div>
+      )}
+
       {send && (
         <Modal title="Send this on WhatsApp" onClose={() => setSend(null)}>
           <SendPanel send={send} onUndo={handleUndo} onClose={() => setSend(null)} />
@@ -144,7 +197,12 @@ export default function AskQueue() {
         <ul className="space-y-2">
           {ready.map((entry) => (
             <li key={entry.customer.id}>
-              <AskRow entry={entry} onWhatsapp={handleWhatsapp} busy={busyId === entry.customer.id || reviewUrlMissing} />
+              <AskRow
+                entry={entry}
+                onWhatsapp={handleWhatsapp}
+                onEmail={handleEmail}
+                busy={busyId === entry.customer.id || reviewUrlMissing}
+              />
             </li>
           ))}
         </ul>

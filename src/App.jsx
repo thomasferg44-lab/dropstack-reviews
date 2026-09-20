@@ -5,6 +5,7 @@ import Layout from "./components/Layout.jsx";
 import CustomersList from "./features/customers/CustomersList.jsx";
 import JobsList from "./features/jobs/JobsList.jsx";
 import AskQueue from "./features/queue/AskQueue.jsx";
+import HistoryList from "./features/history/HistoryList.jsx";
 import { Card } from "./components/ui.jsx";
 
 function SetupNotice() {
@@ -43,6 +44,7 @@ export default function App() {
       {tab === "queue" && <AskQueue />}
       {tab === "customers" && <CustomersList />}
       {tab === "jobs" && <JobsList />}
+      {tab === "history" && <HistoryList />}
     </Layout>
   );
 }

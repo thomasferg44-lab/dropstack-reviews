@@ -27,9 +27,19 @@ All client-specific values live in `companyConfig.js`. A new client deploy is: f
 
 ## Tests
 
-`npm test` runs the cooldown and eligibility unit tests with Node's built-in
-runner. No test dependency. These cover the rules that decide who gets asked,
-including the cooldown boundary and the repeat-ask guard.
+`npm test` runs 68 offline checks with Node's built-in runner. No test
+dependency, nothing sent, nothing written to a database.
+
+| Suite | Covers |
+|---|---|
+| `eligibility.test.js` | who gets asked, cooldown boundary, repeat-ask guard |
+| `templates.test.js` | placeholder rendering, variant rotation, wa.me links |
+| `email.test.js` | subject/body rendering, HTML escaping, refusal cases |
+| `send-review-request.test.mjs` | the function's auth and anti-relay behaviour |
+| `redirectLogic.test.js` | token parsing, redirect target validation |
+| `stats.test.js` | the 30-day window and the open-rate edge cases |
+
+The RLS script is verified separately, in Supabase. See below.
 
 ## The public redirect page (`/r/:token`)
 
@@ -50,6 +60,39 @@ keys are missing, the customer still reaches the review page.
 If you would rather this page matched the rest of the codebase in React and
 Tailwind, say so — it is a small file and the tradeoff is purely size versus
 stylistic consistency.
+
+## The email channel
+
+`netlify/functions/send-review-request.mjs` sends through Resend. Two properties
+keep it from becoming an open relay, and both are covered by tests:
+
+1. **The caller's own Supabase token does the database read.** The function does
+   not decode or trust the token; it uses it against PostgREST, so RLS decides.
+   An anon or forged token reads nothing and gets a 401.
+2. **The recipient never comes from the request body.** The browser sends only a
+   request id. The address, name and job are read from the database. Without
+   this, a signed-in caller could still mail strangers from the client's domain.
+
+### Setting it up
+
+1. Add the client's sending domain in Resend and verify its DNS records.
+2. Put the verified sender into `fromEmail` in `companyConfig.js`.
+3. Put `RESEND_API_KEY` into Netlify's environment variables. **Never prefix it
+   with `VITE_`** — that would inline the secret into the browser bundle.
+4. Leave `DEV_BLOCK_REAL_SENDS=true` everywhere except the production Netlify
+   environment. While it is true, the function logs what it would have sent and
+   returns without calling Resend, and the dashboard says so plainly.
+
+A failed send rolls the request row back, so a customer is never hidden behind
+the cooldown because of an email that did not go out.
+
+## What the numbers mean
+
+The header and the History tab report requests sent and how many of those links
+were opened. That is the whole truth available: Google publishes no signal about
+whether a review was actually left, so there is no review count, no "reviewed"
+state and no completion tick anywhere in this app. A link open is labelled
+exactly that. Please keep it that way.
 
 ## Sending a request
 
@@ -113,9 +156,11 @@ and removes its own test rows and is safe to re-run.
 
 ## Build status
 
-**Stage 7 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers, CSV import, jobs, "Ask now" queue with cooldown, wa.me links + template rendering, public redirect page). Stage 8 (email via Resend) next.
+**v1 complete.** All nine steps of the build order are done. Nothing from the
+"What NOT to do" list was built: no review gating, no paid messaging API, no
+cron, no invented review metrics.
 
-**v1 in progress.** See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
+Not deployed. That is Thomas's step. See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
 
 ## Scope discipline
 

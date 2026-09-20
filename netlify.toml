@@ -1,3 +1,6 @@
+# The email channel runs server-side only: RESEND_API_KEY must never be
+# VITE_ prefixed, or Vite would inline it into the browser bundle.
+
 [build]
   command = "npm run build"
   publish = "dist"

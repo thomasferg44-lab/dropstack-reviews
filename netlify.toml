@@ -3,8 +3,14 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# Single-page app: every path is served by index.html so the public
-# redirect page (/r/:token, Stage 7) and dashboard routes resolve.
+# The public redirect page is its own tiny bundle. This rule must come first:
+# Netlify applies the first match, so /r/* never falls through to the dashboard.
+[[redirects]]
+  from = "/r/*"
+  to = "/r.html"
+  status = 200
+
+# Everything else is the single-page dashboard.
 [[redirects]]
   from = "/*"
   to = "/index.html"

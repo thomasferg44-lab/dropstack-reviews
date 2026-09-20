@@ -31,6 +31,26 @@ All client-specific values live in `companyConfig.js`. A new client deploy is: f
 runner. No test dependency. These cover the rules that decide who gets asked,
 including the cooldown boundary and the repeat-ask guard.
 
+## The public redirect page (`/r/:token`)
+
+This page is its own Vite entry (`r.html`), not a route inside the dashboard, and
+it uses neither React nor supabase-js. A customer opening a review link downloads
+about 5KB rather than the dashboard's ~230KB. The spec is explicit that every
+second of friction here costs reviews, and this page's whole job is one `fetch`
+and one redirect.
+
+It stamps `clicked_at` through the public RPC, shows a client-branded thank-you,
+and redirects after two seconds with a button for anyone who does not want to
+wait. The redirect never waits on the tracking call: if Supabase is slow or the
+keys are missing, the customer still reaches the review page.
+
+`netlify.toml` rewrites `/r/*` to `r.html` ahead of the dashboard's catch-all, and
+`vite.config.js` does the same in dev so `npm run dev` behaves like production.
+
+If you would rather this page matched the rest of the codebase in React and
+Tailwind, say so — it is a small file and the tradeoff is purely size versus
+stylistic consistency.
+
 ## Sending a request
 
 Clicking **WhatsApp** on a queue row creates a `reviews_requests` row, stamps
@@ -93,7 +113,7 @@ and removes its own test rows and is safe to re-run.
 
 ## Build status
 
-**Stage 6 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers, CSV import, jobs, "Ask now" queue with cooldown, wa.me links + template rendering). Stage 7 (public redirect page) next.
+**Stage 7 done** (scaffold, schema + RLS via security-definer RPC, verify script, auth, dashboard shell, customers, CSV import, jobs, "Ask now" queue with cooldown, wa.me links + template rendering, public redirect page). Stage 8 (email via Resend) next.
 
 **v1 in progress.** See `CLAUDE.md` for the full spec, build order and definition of done. See `PROMPT.md` for the Claude Code starting prompt.
 

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Thank you</title>
+    <!-- Critical CSS is inline: this page is opened from WhatsApp on a phone and
+         every extra request costs a fraction of the reviews it is here to earn. -->
+    <style>
+      :root {
+        --brand: #1d4ed8;
+        --accent: #f59e0b;
+        --text: #111827;
+        --muted: #6b7280;
+        --surface: #ffffff;
+        --bg: #f4f5f7;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 24px rgba(0, 0, 0, .06);
+      }
+      .logo { max-width: 160px; max-height: 64px; margin: 0 auto 20px; display: block; }
+      .logo[hidden] { display: none; }
+      h1 { margin: 0 0 8px; font-size: 20px; line-height: 1.3; font-weight: 650; }
+      p  { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 15px 20px;
+        border-radius: 12px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 17px;
+        font-weight: 600;
+        text-decoration: none;
+        /* Comfortably above the 44px minimum tap target. */
+        min-height: 52px;
+      }
+      .btn:active { opacity: .85; }
+      .note { margin: 16px 0 0; font-size: 13px; color: var(--muted); min-height: 1.5em; }
+      .hidden { display: none; }
+      @media (prefers-reduced-motion: no-preference) {
+        .card { animation: rise .25s ease-out; }
+        @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <img id="logo" class="logo" alt="" hidden />
+      <h1 id="heading">Thanks for your business</h1>
+      <p id="blurb">A quick review really helps. It only takes a minute.</p>
+      <a id="cta" class="btn" href="#" rel="noopener">Leave a Google review</a>
+      <p id="note" class="note"></p>
+    </main>
+    <script type="module" src="/src/public/redirect.js"></script>
+  </body>
+</html>

@@ -18,3 +18,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[functions]
+  directory = "netlify/functions"
+  excluded_patterns = ["**/*.test.mjs", "**/*.test.js"]

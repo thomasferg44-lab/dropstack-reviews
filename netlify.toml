@@ -4,7 +4,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
-  functions = "netlify/functions"
+  
 
 # The public redirect page is its own tiny bundle. This rule must come first:
 # Netlify applies the first match, so /r/* never falls through to the dashboard.

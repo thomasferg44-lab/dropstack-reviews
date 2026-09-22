@@ -21,4 +21,4 @@
 
 [functions]
   directory = "netlify/functions"
-  excluded_patterns = ["**/*.test.mjs", "**/*.test.js"]
+  

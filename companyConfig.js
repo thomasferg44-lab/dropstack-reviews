@@ -3,8 +3,10 @@
 // Secrets (Supabase keys, Resend key) never go here — they live in .env.
 
 export const companyConfig = {
-  // Shown on the public redirect page and used in message templates.
-  businessName: "Example Plumbing",
+  // Shown on the public redirect page and in every message template.
+  // REPLACE PER CLIENT. This default is a deliberately invented business that
+  // does not exist; never ship it to a real deploy.
+  businessName: "Quillbrook Plumbing",
   logoUrl: "/logo.svg",
 
   // Public-page branding only. The owner dashboard uses fixed DropStack tokens.
@@ -17,7 +19,9 @@ export const companyConfig = {
 
   // Sender for the email channel. The domain must be verified in Resend, or
   // sends are rejected. Not a secret — the Resend API key lives in .env.
-  fromEmail: "reviews@exampleplumbing.co.za",
+  // example.com is reserved by RFC 2606 and can never be registered, so an
+  // unconfigured deploy cannot mail a real domain. REPLACE PER CLIENT.
+  fromEmail: "reviews@example.com",
   replyToEmail: "",   // optional; replies go to fromEmail when blank
 
   // Never surface a customer in the "Ask now" queue if they were asked

@@ -14,7 +14,7 @@ export default function CustomerForm({ initial, onSubmit, onCancel }) {
     e.preventDefault();
     setError("");
     if (!name.trim()) return setError("Name is required.");
-    if (!isPlausiblePhone(phone)) return setError("That phone number doesn’t look right. Use e.g. 082 123 4567 or +27 82 123 4567.");
+    if (!isPlausiblePhone(phone)) return setError("That phone number doesn’t look right. Use 0XX XXX XXXX or +27 XX XXX XXXX.");
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("That email address doesn’t look right.");
     if (!phone.trim() && !email.trim()) {
       // Allowed, but the customer can't be asked for a review without one.
@@ -30,11 +30,11 @@ export default function CustomerForm({ initial, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <Label htmlFor="cf-name">Name</Label>
-        <Input id="cf-name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder="e.g. Thandi Nkosi" />
+        <Input id="cf-name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus placeholder="e.g. Jane Doe" />
       </div>
       <div>
         <Label htmlFor="cf-phone">Phone (for WhatsApp)</Label>
-        <Input id="cf-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="082 123 4567" />
+        <Input id="cf-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0XX XXX XXXX" />
       </div>
       <div>
         <Label htmlFor="cf-email">Email</Label>

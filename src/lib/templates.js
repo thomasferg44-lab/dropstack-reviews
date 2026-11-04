@@ -39,7 +39,7 @@ export function pickVariant(variants, seed = 0) {
 /**
  * wa.me wants digits only: country code first, no +, spaces or dashes.
  * Returns null for anything that isn't in international form, because a local
- * number like 0821234567 would open a chat with the wrong person.
+ * number like 0820000000 would open a chat with the wrong person.
  */
 export function waNumber(phone) {
   const v = String(phone ?? "").trim().replace(/[\s\-().]/g, "");

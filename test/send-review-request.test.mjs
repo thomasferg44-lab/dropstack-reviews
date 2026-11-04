@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 process.env.VITE_SUPABASE_URL = "https://proj.supabase.co";
 process.env.VITE_SUPABASE_ANON_KEY = "anon-key";
 
-const { default: handler } = await import("./send-review-request.mjs");
+const { default: handler } = await import("../netlify/functions/send-review-request.mjs");
 
 const ROW = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -28,7 +28,7 @@ function stubFetch({ lookupStatus = 200, lookupBody = [ROW], resendStatus = 200 
 }
 
 const post = (body, headers = { authorization: "Bearer owner-token" }) =>
-  new Request("https://reviews.example.co.za/.netlify/functions/send-review-request", {
+  new Request("https://reviews.example.com/.netlify/functions/send-review-request", {
     method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body),
   });
 
@@ -109,7 +109,7 @@ test("the tracked link is built from the deploy's own origin", async () => {
   const calls = stubFetch();
   await handler(post({ requestId: ROW.id }));
   const payload = JSON.parse(calls.find((c) => c.url.includes("resend.com")).options.body);
-  assert.ok(payload.text.includes(`https://reviews.example.co.za/r/${ROW.token}`));
+  assert.ok(payload.text.includes(`https://reviews.example.com/r/${ROW.token}`));
 });
 
 test("a provider failure is reported rather than silently swallowed", async () => {

@@ -7,17 +7,17 @@ const TEMPLATE = {
   body: "Hi {customerName},\n\nThanks for choosing {businessName} for your {jobDescription}.\n\n{reviewLink}\n\nThanks,\n{businessName}",
 };
 const base = {
-  customer: { name: "Thandi", email: "test@example.com" },
+  customer: { name: "Jane Doe", email: "test@example.com" },
   job: { description: "geyser replacement" },
-  businessName: "Cape Plumbing",
+  businessName: "Quillbrook Plumbing",
   template: TEMPLATE,
-  reviewLink: "https://reviews.example.co.za/r/tok123",
+  reviewLink: "https://reviews.example.com/r/tok123",
 };
 
 test("subject and body are rendered with every placeholder filled", () => {
   const m = buildEmail(base);
-  assert.equal(m.subject, "Quick favour from Cape Plumbing?");
-  assert.ok(m.text.startsWith("Hi Thandi,"));
+  assert.equal(m.subject, "Quick favour from Quillbrook Plumbing?");
+  assert.ok(m.text.startsWith("Hi Jane Doe,"));
   assert.ok(m.text.includes("geyser replacement"));
   assert.ok(m.text.includes(base.reviewLink));
   assert.ok(!m.text.includes("{"));
@@ -25,7 +25,7 @@ test("subject and body are rendered with every placeholder filled", () => {
 
 test("the html version contains the link exactly once as a button plus a fallback", () => {
   const m = buildEmail(base);
-  const hrefs = m.html.match(/href="https:\/\/reviews\.example\.co\.za\/r\/tok123"/g) ?? [];
+  const hrefs = m.html.match(/href="https:\/\/reviews\.example\.com\/r\/tok123"/g) ?? [];
   assert.equal(hrefs.length, 2, "one button, one copy-paste fallback");
   assert.ok(m.html.includes("Leave a Google review"));
 });
@@ -67,7 +67,7 @@ test("paragraphs and line breaks survive the conversion to html", () => {
 });
 
 test("the wrapper carries a plain-text fallback link for clients that block buttons", () => {
-  const html = wrapHtml("<p>hi</p>", { businessName: "Cape Plumbing", reviewLink: "https://x.test/r/t" });
+  const html = wrapHtml("<p>hi</p>", { businessName: "Quillbrook Plumbing", reviewLink: "https://x.test/r/t" });
   assert.ok(html.includes("paste this into your browser"));
-  assert.ok(html.includes("Sent by Cape Plumbing."));
+  assert.ok(html.includes("Sent by Quillbrook Plumbing."));
 });

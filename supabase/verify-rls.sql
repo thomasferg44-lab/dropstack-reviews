@@ -337,8 +337,10 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
--- 14. no reviews_* function is executable by anon or PUBLIC except the one
---     intended public door. Catches the Supabase default-privilege trap for any
+-- 14. no reviews_* function is executable by anon or PUBLIC except the
+--     intended public doors (open_link, and since 2026-11-05 submit_feedback,
+--     google_click and showcase_list: each SECURITY DEFINER, token-scoped or
+--     published-only). Catches the Supabase default-privilege trap for any
 --     function added later: Supabase grants EXECUTE directly to anon/authenticated
 --     on every new public function, and `revoke ... from public` does not undo that.
 -- -----------------------------------------------------------------------------
@@ -352,14 +354,15 @@ begin
      where n.nspname = 'public' and p.proname like 'reviews\_%'
   loop
     v_total := v_total + 1;
-    if has_function_privilege('anon', r.sig, 'execute') and r.proname <> 'reviews_open_link' then
+    if has_function_privilege('anon', r.sig, 'execute')
+       and r.proname not in ('reviews_open_link', 'reviews_submit_feedback', 'reviews_google_click', 'reviews_showcase_list') then
       v_bad := v_bad || r.sig || ' (anon); ';
     end if;
     if has_function_privilege('public', r.sig, 'execute') then
       v_bad := v_bad || r.sig || ' (PUBLIC); ';
     end if;
   end loop;
-  perform pg_temp.reviews_verify_record(14, 'no reviews_* function is executable by anon or PUBLIC except open_link',
+  perform pg_temp.reviews_verify_record(14, 'no reviews_* function is executable by anon or PUBLIC except the public doors',
     v_bad = '' and v_total >= 3,
     case when v_bad = '' then format('%s functions checked, all locked down', v_total)
          else 'stray EXECUTE grants: ' || v_bad end);

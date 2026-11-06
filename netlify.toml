@@ -6,11 +6,23 @@
   publish = "dist"
   
 
-# The public redirect page is its own tiny bundle. This rule must come first:
+# The public review landing is its own tiny bundle. This rule must come first:
 # Netlify applies the first match, so /r/* never falls through to the dashboard.
 [[redirects]]
   from = "/r/*"
   to = "/r.html"
+  status = 200
+
+# The showcase strip, framed on the client's site by /showcase.js.
+[[redirects]]
+  from = "/showcase"
+  to = "/showcase.html"
+  status = 200
+
+# Health check: GET /api/health -> booleans only (src/lib/health.js).
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
   status = 200
 
 # Everything else is the single-page dashboard.

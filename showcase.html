@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>%TITLE%</title>
+    <!--brand-->
+    <!-- Framed on the client's own site by /showcase.js. Transparent page,
+         self-contained cards: it has to look right on THEIR background. -->
+    <style>
+      :root { --ink: #1d1d1f; --ink-2: #48484a; --ink-3: #6e6e73; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: transparent; }
+      body { color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+      .strip { padding: 4px 4px 8px; }
+      .strip[data-empty] { padding: 0; }
+      h2 { margin: 0 0 14px; font-size: 22px; line-height: 1.2; font-weight: 650; letter-spacing: -.015em; }
+      .row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 82%); gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+             padding: 2px 2px 14px; scrollbar-width: none; }
+      .row::-webkit-scrollbar { display: none; }
+      @media (min-width: 720px) { .row { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; } }
+      .card { margin: 0; scroll-snap-align: start; background: #fff; border-radius: 18px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px;
+              box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .14); border: 1px solid rgb(0 0 0 / .04); }
+      .stars { display: flex; gap: 2px; }
+      .stars .on { fill: var(--brand); }
+      .stars .off { fill: #e3e3e8; }
+      blockquote { margin: 0; font-size: 16px; color: var(--ink); text-wrap: pretty; }
+      figcaption { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+      .who { font-weight: 600; }
+      .when { color: var(--ink-3); }
+      .more { margin: 4px 2px 0; font-size: 15px; }
+      .more a { color: var(--brand); font-weight: 600; text-decoration: none; }
+      .more a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <!--body-->
+    <script type="module" src="/src/public/showcase.js"></script>
+  </body>
+</html>

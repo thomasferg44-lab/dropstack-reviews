@@ -1,81 +1,115 @@
+// The public review landing (/r/:token). The page arrives fully rendered and
+// branded from the build (src/public/render.js); this script only:
+//   1. stamps "link opened" (fire-and-forget; the page never waits on it)
+//   2. beacons "tapped the Google button" before Google opens
+//   3. runs the optional feedback step, keeping the customer's words on the
+//      phone until the server has them (a dropped signal loses nothing)
+//
+// No React, no supabase-js: this is the customer's surface on prepaid data.
+// The Google button is never touched by this script: it is the same for
+// everyone, whatever they answer (see landing.js / landing.test.js).
 import { companyConfig } from "../../companyConfig.js";
-import { tokenFromPath, redirectTarget, stampRequest } from "./redirectLogic.js";
+import { tokenFromPath, stampRequest } from "./redirectLogic.js";
+import { feedbackRequest, googleClickRequest, readDraft, writeDraft, validRating } from "./landing.js";
+import { renderAfter } from "./render.js";
+import { mockPublicRpc } from "../dev/mockPublic.js";
 
-// The public page a customer lands on from a review request.
-//
-// It deliberately does NOT use React or supabase-js. Those cost roughly 70KB
-// gzipped for a page whose entire job is one fetch and one redirect, and the
-// spec is explicit that every second of friction here loses reviews. The dashboard
-// keeps the full stack; this page is its own Vite entry with its own tiny bundle.
-//
-// It also asks the customer nothing. There is no satisfaction step and no branch:
-// everyone who opens this link goes to the same public review page.
+const MOCK = import.meta.env.VITE_MOCK_BACKEND === "1";
+const env = { supabaseUrl: import.meta.env.VITE_SUPABASE_URL, anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY };
+const $ = (sel) => document.querySelector(sel);
+const token = tokenFromPath(window.location.pathname);
+let storage = null;
+try { storage = window.localStorage; } catch { storage = null; }
 
-const REDIRECT_DELAY_MS = 2000;
-
-const el = (id) => document.getElementById(id);
-
-function applyBranding() {
-  const root = document.documentElement.style;
-  if (companyConfig.primaryColor) root.setProperty("--brand", companyConfig.primaryColor);
-  if (companyConfig.accentColor) root.setProperty("--accent", companyConfig.accentColor);
-
-  const name = String(companyConfig.businessName ?? "").trim();
-  if (name) {
-    el("heading").textContent = `Thanks for choosing ${name}`;
-    document.title = `Thanks — ${name}`;
-  }
-
-  const logo = el("logo");
-  if (companyConfig.logoUrl) {
-    logo.alt = name || "";
-    logo.src = companyConfig.logoUrl;
-    logo.hidden = false;
-    // A broken logo path should not leave a torn layout on a customer's phone.
-    logo.addEventListener("error", () => { logo.hidden = true; }, { once: true });
+/** Returns "ok" | "invalid" (server said no such token) | "offline" | "failed". */
+async function call(req, fn, body) {
+  if (MOCK) return mockPublicRpc(fn, body);
+  if (!req) return "failed";
+  try {
+    const res = await fetch(req.url, req.options);
+    if (!res.ok) return "failed";
+    return (await res.json().catch(() => null)) === true ? "ok" : "invalid";
+  } catch {
+    return navigator.onLine === false ? "offline" : "failed";
   }
 }
 
-// Fire-and-forget. The redirect never waits on this: if Supabase is slow or down,
-// the customer still reaches the review page. Tracking is our problem, not theirs.
-function stampClick(token) {
-  const req = stampRequest({
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    token,
+// ---- 1. link opened ---------------------------------------------------------
+if (token) call(stampRequest({ ...env, token }), "reviews_open_link", { p_token: token });
+
+// A broken logo URL must not leave a torn header: fall back to the monogram.
+const logo = $("[data-logo]");
+if (logo) {
+  const fallback = () => { logo.hidden = true; const m = $("[data-mono]"); if (m) { m.hidden = false; m.removeAttribute("aria-hidden"); m.setAttribute("role", "img"); m.setAttribute("aria-label", companyConfig.businessName ?? ""); } };
+  if (logo.complete && logo.naturalWidth === 0) fallback();
+  else logo.addEventListener("error", fallback, { once: true });
+}
+
+// ---- 2. Google tap ----------------------------------------------------------
+// keepalive lets the beacon finish after Google opens. We record a tap, never
+// "reviewed": Google tells nobody whether a review was actually written.
+$("[data-google]")?.addEventListener("click", () => {
+  if (token) call(googleClickRequest({ ...env, token }), "reviews_google_click", { p_token: token });
+});
+
+// ---- 3. optional feedback ---------------------------------------------------
+const after = $("[data-after]");
+let state = { rating: null, comment: "", status: "idle" };
+
+function paint() {
+  for (const b of document.querySelectorAll("[data-rating]")) b.setAttribute("aria-checked", String(Number(b.dataset.rating) === state.rating));
+  const focused = document.activeElement?.id === "comment";
+  after.innerHTML = renderAfter(companyConfig, state);
+  if (focused) $("#comment")?.focus();
+}
+
+function save(pending) {
+  if (token) writeDraft(storage, token, { rating: state.rating, comment: state.comment, pending, sent: !pending && state.status === "sent" });
+}
+
+async function submit({ withComment }) {
+  if (!token || !state.rating) return;
+  save(true);
+  const comment = withComment ? state.comment : null;
+  const result = await call(feedbackRequest({ ...env, token, rating: state.rating, comment }), "reviews_submit_feedback",
+    { p_token: token, p_rating: state.rating, p_comment: comment });
+  if (result === "ok") {
+    state.status = withComment ? "sent" : "idle";
+    save(false);
+  } else {
+    state.status = result === "invalid" ? "invalid" : result === "offline" ? "queued" : "failed";
+    if (result === "invalid") save(false);
+  }
+  paint();
+}
+
+if (after) {
+  document.querySelector(".scale")?.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-rating]");
+    if (!b) return;
+    state.rating = validRating(b.dataset.rating);
+    state.status = "idle";
+    paint();
+    submit({ withComment: Boolean(state.comment.trim()) });
   });
-  if (!req) return;
-  fetch(req.url, req.options).catch(() => {});
-}
+  after.addEventListener("input", (e) => {
+    if (e.target.matches("[data-comment]")) { state.comment = e.target.value; save(true); }
+  });
+  after.addEventListener("submit", (e) => {
+    e.preventDefault();
+    submit({ withComment: true });
+  });
 
-function main() {
-  applyBranding();
-
-  const target = redirectTarget(companyConfig.reviewUrl);
-  const cta = el("cta");
-
-  if (target.error) {
-    // Should be unreachable: the dashboard refuses to send while reviewUrl is unset.
-    cta.classList.add("hidden");
-    el("blurb").textContent = "This link isn’t available right now. Sorry about that.";
-    el("note").textContent = "";
-    return;
+  // Back after a dropped connection or a reload: restore their words, and
+  // finish sending anything that didn't get through.
+  const draft = token ? readDraft(storage, token) : null;
+  if (draft?.rating) {
+    state = { rating: draft.rating, comment: draft.comment, status: draft.sent ? "sent" : "idle" };
+    paint();
+    if (draft.pending) submit({ withComment: Boolean(draft.comment.trim()) });
   }
-
-  cta.href = target.url;
-
-  const token = tokenFromPath(window.location.pathname);
-  if (token) stampClick(token);
-
-  el("note").textContent = "Taking you there now…";
-
-  // replace(), not assign(): otherwise Back lands here again and bounces the
-  // customer straight back out, which feels like a trap.
-  const go = () => window.location.replace(target.url);
-  const timer = setTimeout(go, REDIRECT_DELAY_MS);
-
-  // Tapping the button should win immediately rather than racing the timer.
-  cta.addEventListener("click", () => clearTimeout(timer));
+  window.addEventListener("online", () => {
+    const d = token ? readDraft(storage, token) : null;
+    if (d?.pending && state.rating) submit({ withComment: Boolean(state.comment.trim()) });
+  });
 }
-
-main();

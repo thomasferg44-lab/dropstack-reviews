@@ -4,18 +4,28 @@
 // varies only to avoid sounding robotic across repeat sends — never by predicted
 // sentiment. See the review-gating section of CLAUDE.md.
 
-const PLACEHOLDER = /\{(customerName|businessName|jobDescription|reviewLink)\}/g;
+const PLACEHOLDER = /\{(customerName|firstName|businessName|jobDescription|jobWhen|reviewLink)\}/g;
 
 // Reads naturally in "thanks for choosing X for your ___" when a job was logged
 // without a description.
 export const JOB_FALLBACK = "recent job";
 
+/** First word of a name, for a personal greeting. Falls back to the full name. */
+export function firstName(name) {
+  const n = String(name ?? "").trim();
+  return n.split(/\s+/)[0] || n;
+}
+
 export function renderTemplate(template, values) {
   const filled = {
     customerName: String(values.customerName ?? "").trim(),
+    // "Hi Thandi" reads like a person; "Hi Thandi Mokoena" reads like a system.
+    firstName: String(values.firstName ?? firstName(values.customerName)).trim(),
     businessName: String(values.businessName ?? "").trim(),
     jobDescription: String(values.jobDescription ?? "").trim() || JOB_FALLBACK,
     reviewLink: String(values.reviewLink ?? "").trim(),
+    // "yesterday", "on Tuesday", "last week": when the job was done, in words.
+    jobWhen: String(values.jobWhen ?? "").trim() || "recently",
   };
   return String(template ?? "")
     .replace(PLACEHOLDER, (_, key) => filled[key])

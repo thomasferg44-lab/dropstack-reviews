@@ -490,7 +490,9 @@ begin
             (r->>'feedback_at')::timestamptz,
             (r->>'followed_up_at')::timestamptz,
             nullif(r->>'follow_up_channel', ''),
-            coalesce((r->>'sent_at')::timestamptz, now()),
+            -- created now, sent in the past: the onboarding checklist reads
+            -- that as "seeded", not as the owner's own first send
+            now(),
             true);
     n_r := n_r + 1;
   end loop;

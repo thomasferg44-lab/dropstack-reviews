@@ -2,77 +2,79 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="referrer" content="no-referrer" />
-    <title>Thank you</title>
-    <!-- Critical CSS is inline: this page is opened from WhatsApp on a phone and
-         every extra request costs a fraction of the reviews it is here to earn. -->
+    <meta name="theme-color" content="#f5f5f7" />
+    <title>%TITLE%</title>
+    <!-- The client's colours are written in here at build time (vite.config.js),
+         before any content, so the page paints in their brand from the first
+         frame. No default colour exists in this file to flash. -->
+    <!--brand-->
+    <!-- Critical CSS is inline: this page is opened from WhatsApp on a phone,
+         often on prepaid data and a weak signal. One HTML document carries the
+         whole first paint; the script only adds the feedback step. -->
     <style>
-      :root {
-        --brand: #1d4ed8;
-        --accent: #f59e0b;
-        --text: #111827;
-        --muted: #6b7280;
-        --surface: #ffffff;
-        --bg: #f4f5f7;
-      }
+      :root { --ink: #1d1d1f; --ink-2: #48484a; --ink-3: #6e6e73; --canvas: #f5f5f7; --line: rgb(0 0 0 / .08); --field: #d2d2d7;
+              --good: #1a7a37; --good-soft: #e6f6ea; --warn: #a35200; --warn-soft: #fff4e0; --ease: cubic-bezier(0.22, 1, 0.36, 1); }
       * { box-sizing: border-box; }
-      html, body { height: 100%; }
-      body {
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px 16px;
-        background: var(--bg);
-        color: var(--text);
-        font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-      .card {
-        width: 100%;
-        max-width: 420px;
-        background: var(--surface);
-        border-radius: 16px;
-        padding: 32px 24px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 8px 24px rgba(0, 0, 0, .06);
-      }
-      .logo { max-width: 160px; max-height: 64px; margin: 0 auto 20px; display: block; }
-      .logo[hidden] { display: none; }
-      h1 { margin: 0 0 8px; font-size: 20px; line-height: 1.3; font-weight: 650; }
-      p  { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
-      .btn {
-        display: block;
-        width: 100%;
-        padding: 15px 20px;
-        border-radius: 12px;
-        background: var(--brand);
-        color: #fff;
-        font-size: 17px;
-        font-weight: 600;
-        text-decoration: none;
-        /* Comfortably above the 44px minimum tap target. */
-        min-height: 52px;
-      }
-      .btn:active { opacity: .85; }
-      .note { margin: 16px 0 0; font-size: 13px; color: var(--muted); min-height: 1.5em; }
-      .hidden { display: none; }
+      html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+      body { margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 28px 16px 24px;
+             background: var(--canvas); color: var(--ink);
+             font: 17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif;
+             -webkit-font-smoothing: antialiased; }
+      @media (min-height: 760px) { body { align-items: center; } }
+      .sheet { width: 100%; max-width: 440px; background: #fff; border-radius: 22px; padding: 32px 24px 22px;
+               box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .12); }
+      .brand { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 22px; }
+      .logo { display: block; max-width: 168px; max-height: 52px; width: auto; height: auto; object-fit: contain; }
+      .mono { width: 56px; height: 56px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center;
+              background: var(--brand); color: var(--brand-ink); font-weight: 650; font-size: 21px; letter-spacing: -.01em; }
+      .mono[hidden], .logo[hidden] { display: none; }
+      .biz { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: .01em; }
+      h1 { margin: 0 0 8px; text-align: center; font-size: 24px; line-height: 1.2; font-weight: 650; letter-spacing: -.015em; text-wrap: balance; }
+      .lede { margin: 0 auto 22px; max-width: 34ch; text-align: center; color: var(--ink-2); font-size: 16px; text-wrap: pretty; }
+      .btn-primary { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; padding: 14px 20px;
+                     border-radius: 14px; background: var(--brand); color: var(--brand-ink); font-size: 17px; font-weight: 600;
+                     text-decoration: none; transition: transform 200ms var(--ease), opacity 200ms var(--ease); }
+      .btn-primary:active { transform: scale(.98); opacity: .92; }
+      .note { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--ink-3); }
+      .ask { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+      h2 { margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+      .sub { margin: 4px 0 14px; text-align: center; font-size: 13px; color: var(--ink-3); }
+      .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+      .scale button { appearance: none; border: 1px solid var(--field); background: #fff; border-radius: 12px; min-height: 60px; padding: 6px 2px;
+                      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink);
+                      font: inherit; cursor: pointer; transition: border-color 200ms var(--ease), background-color 200ms var(--ease); }
+      .scale .n { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+      .scale .l { font-size: 11px; color: var(--ink-3); line-height: 1.15; text-align: center; }
+      .scale button[aria-checked="true"] { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
+      .scale button[aria-checked="true"] .l { color: inherit; opacity: .9; }
+      .after:not(:empty) { margin-top: 18px; }
+      .thanks { margin: 0 0 14px; text-align: center; font-size: 15px; color: var(--ink-2); }
+      .btn-quiet { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; padding: 12px 16px; margin-bottom: 16px;
+                   border-radius: 12px; background: #f2f2f4; color: var(--ink); font-size: 16px; font-weight: 600; text-decoration: none; }
+      .words label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+      .words .opt { font-weight: 400; color: var(--ink-3); }
+      textarea { display: block; width: 100%; min-height: 88px; padding: 12px 14px; border: 1px solid var(--field); border-radius: 12px; resize: vertical;
+                 font: inherit; font-size: 16px; color: var(--ink); background: #fff; outline: none; }
+      textarea:focus { border-color: #0071e3; box-shadow: 0 0 0 4px rgb(0 113 227 / .16); }
+      .btn-send { margin-top: 10px; width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: #f2f2f4; color: var(--ink);
+                  font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+      .status { display: flex; gap: 6px; align-items: flex-start; justify-content: center; margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
+      .status.good { background: var(--good-soft); color: var(--good); }
+      .status.warn { background: var(--warn-soft); color: var(--warn); }
+      .status svg { flex-shrink: 0; margin-top: 2px; }
+      .foot { margin-top: 28px; text-align: center; font-size: 12px; color: var(--ink-3); }
+      :focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
       @media (prefers-reduced-motion: no-preference) {
-        .card { animation: rise .25s ease-out; }
-        @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .after > * { animation: fade 180ms ease-out both; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
       }
     </style>
   </head>
   <body>
-    <main class="card">
-      <img id="logo" class="logo" alt="" hidden />
-      <h1 id="heading">Thanks for your business</h1>
-      <p id="blurb">A quick review really helps. It only takes a minute.</p>
-      <a id="cta" class="btn" href="#" rel="noopener">Leave a Google review</a>
-      <p id="note" class="note"></p>
-    </main>
+    <!--body-->
     <script type="module" src="/src/public/redirect.js"></script>
   </body>
 </html>

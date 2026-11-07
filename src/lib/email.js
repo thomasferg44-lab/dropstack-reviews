@@ -57,7 +57,7 @@ export function wrapHtml(inner, { businessName, reviewLink }) {
   );
 }
 
-export function buildEmail({ customer, job, businessName, template, reviewLink, primaryColor }) {
+export function buildEmail({ customer, job, businessName, template, reviewLink, primaryColor, jobWhen }) {
   const to = String(customer?.email ?? "").trim();
   if (!to) return { error: `${customer?.name ?? "This customer"} has no email address.` };
   if (!EMAIL_RE.test(to)) return { error: `"${to}" is not a valid email address.` };
@@ -73,6 +73,7 @@ export function buildEmail({ customer, job, businessName, template, reviewLink, 
     customerName: customer?.name,
     businessName,
     jobDescription: job?.description || JOB_FALLBACK,
+    jobWhen,
     reviewLink,
   };
   const subject = renderTemplate(subjectTemplate, values);

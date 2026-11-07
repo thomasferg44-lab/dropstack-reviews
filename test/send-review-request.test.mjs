@@ -138,3 +138,56 @@ test("a customer with no email is refused before the provider is called", async 
   assert.equal(res.status, 422);
   assert.equal(calls.filter((c) => c.url.includes("resend.com")).length, 0);
 });
+
+// ---- 2026-11-05: the one follow-up ------------------------------------------------
+test("a follow-up email uses the follow-up template and the job timing", async () => {
+  process.env.DEV_BLOCK_REAL_SENDS = "false";
+  process.env.RESEND_API_KEY = "re_test";
+  const calls = stubFetch({ lookupBody: [{ ...ROW, sent_at: "2026-10-28T10:00:00Z", followed_up_at: null }] });
+  const res = await handler(post({ requestId: ROW.id, followUp: true }));
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).followUp, true);
+  const lookup = calls.find((c) => c.url.includes("/rest/v1/"));
+  assert.ok(decodeURIComponent(lookup.url).includes("followed_up_at"), "reads the follow-up stamp");
+  const payload = JSON.parse(calls.find((c) => c.url.includes("resend.com")).options.body);
+  assert.match(payload.subject, /^One last thing from /);
+  assert.match(payload.text, /won't ask again/);
+});
+
+test("ONE follow-up: a request already followed up is refused before the provider is called", async () => {
+  process.env.DEV_BLOCK_REAL_SENDS = "false";
+  process.env.RESEND_API_KEY = "re_test";
+  const calls = stubFetch({ lookupBody: [{ ...ROW, sent_at: "2026-10-28T10:00:00Z", followed_up_at: "2026-11-02T10:00:00Z" }] });
+  const res = await handler(post({ requestId: ROW.id, followUp: true }));
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /One follow-up per request/);
+  assert.equal(calls.filter((c) => c.url.includes("resend.com")).length, 0);
+});
+
+test("a follow-up on a request that was never sent is refused", async () => {
+  const calls = stubFetch({ lookupBody: [{ ...ROW, sent_at: null, followed_up_at: null }] });
+  const res = await handler(post({ requestId: ROW.id, followUp: true }));
+  assert.equal(res.status, 409);
+  assert.equal(calls.filter((c) => c.url.includes("resend.com")).length, 0);
+});
+
+test("a normal request email does not ask the database for patch-only columns (works before the patch)", async () => {
+  process.env.DEV_BLOCK_REAL_SENDS = "true";
+  const calls = stubFetch();
+  await handler(post({ requestId: ROW.id }));
+  assert.ok(!decodeURIComponent(calls[0].url).includes("followed_up_at"));
+});
+
+test("the health endpoint answers booleans only and refuses writes", async () => {
+  const { default: health } = await import("../netlify/functions/health.mjs");
+  process.env.RESEND_API_KEY = "re_secret_value";
+  global.fetch = async () => new Response(JSON.stringify({ code: "42501" }), { status: 401 });
+  const res = await health(new Request("https://reviews.example.com/api/health"));
+  const body = await res.json();
+  assert.equal(res.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.database, true);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  assert.ok(!JSON.stringify(body).includes("re_secret_value") && !JSON.stringify(body).includes("anon-key"));
+  assert.equal((await health(new Request("https://x.test/api/health", { method: "POST" }))).status, 405);
+});

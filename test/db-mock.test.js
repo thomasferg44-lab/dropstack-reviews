@@ -9,7 +9,7 @@ import * as db from "../src/lib/db.js";
 import { buildDemoPayload } from "../src/lib/demoData.js";
 
 const client = createMockClient();
-db.useClient(client);
+db.setClient(client);
 mockStore.set("dropstack-mock-latency", "0");
 
 async function fresh({ legacy = false } = {}) {
@@ -104,4 +104,10 @@ test("a duplicate phone is reported in plain words", async () => {
   await db.saveCustomer({ name: "A", phone: "+27000000101" });
   // "+27 00 000 0101" and "+27000000101" are the same number once normalised
   await assert.rejects(db.saveCustomer({ name: "B", phone: "+27 00 000 0101" }), /A customer with this phone number already exists/);
+});
+
+test("a job finished today is stamped now, never as a future noon that hides it from Ask now", () => {
+  const morning = new Date("2026-11-05T07:30:00+02:00");
+  assert.equal(db.dateToIso("2026-11-05", morning), morning.toISOString());
+  assert.equal(db.dateToIso("2026-11-03", morning), "2026-11-03T10:00:00.000Z");
 });

@@ -1,6 +1,7 @@
 import { companyConfig } from "../../companyConfig.js";
 import { buildEmail } from "../../src/lib/email.js";
 import { buildTrackedLink } from "../../src/lib/templates.js";
+import { jobWhen, DEFAULT_FOLLOW_UP } from "../../src/lib/compose.js";
 
 // Sends one review-request email through Resend.
 //
@@ -23,6 +24,8 @@ const json = (status, body) =>
 
 const SELECT =
   "id,token,channel,sent_at,customer:reviews_customers(id,name,email),job:reviews_jobs(id,description,completed_at)";
+// The one follow-up also needs the follow-up stamp (2026-11-05 patch column).
+const SELECT_FOLLOW_UP = SELECT + ",followed_up_at";
 
 export default async (req) => {
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -43,10 +46,11 @@ export default async (req) => {
 
   const requestId = String(body?.requestId ?? "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(requestId)) return json(400, { error: "A valid requestId is required." });
+  const followUp = body?.followUp === true;
 
   // The owner's own token does the read. RLS decides, not this function.
   const lookup = await fetch(
-    `${supabaseUrl.replace(/\/+$/, "")}/rest/v1/reviews_requests?id=eq.${encodeURIComponent(requestId)}&select=${encodeURIComponent(SELECT)}`,
+    `${supabaseUrl.replace(/\/+$/, "")}/rest/v1/reviews_requests?id=eq.${encodeURIComponent(requestId)}&select=${encodeURIComponent(followUp ? SELECT_FOLLOW_UP : SELECT)}`,
     { headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }
   );
   if (lookup.status === 401 || lookup.status === 403) return json(401, { error: "Not signed in." });
@@ -55,12 +59,22 @@ export default async (req) => {
   const [row] = await lookup.json();
   if (!row) return json(404, { error: "That request no longer exists." });
 
+  // ONE follow-up per request (the database guard refuses a second stamp;
+  // this refuses to even send one). The browser records the stamp after a
+  // successful send.
+  if (followUp) {
+    if (!row.sent_at) return json(409, { error: "This request hasn't been sent yet, so there's nothing to follow up." });
+    if (row.followed_up_at) return json(409, { error: "Already followed up once. One follow-up per request is the limit." });
+  }
+
   const origin = new URL(req.url).origin;
+  const followUpTemplate = companyConfig.templates?.followUp?.email?.subject ? companyConfig.templates.followUp.email : DEFAULT_FOLLOW_UP.email;
   const message = buildEmail({
     customer: row.customer,
     job: row.job,
     businessName: companyConfig.businessName,
-    template: companyConfig.templates?.email,
+    template: followUp ? followUpTemplate : companyConfig.templates?.email,
+    jobWhen: jobWhen(row.job?.completed_at),
     reviewLink: buildTrackedLink(origin, row.token),
     primaryColor: companyConfig.primaryColor,
   });
@@ -74,7 +88,7 @@ export default async (req) => {
     console.log("[send-review-request] BLOCKED (DEV_BLOCK_REAL_SENDS). Would have sent:", {
       to: message.to, subject: message.subject,
     });
-    return json(200, { blocked: true, to: message.to, subject: message.subject });
+    return json(200, { blocked: true, to: message.to, subject: message.subject, followUp });
   }
 
   const resendKey = process.env.RESEND_API_KEY;
@@ -100,5 +114,5 @@ export default async (req) => {
   }
 
   const result = await sent.json().catch(() => ({}));
-  return json(200, { blocked: false, to: message.to, id: result.id ?? null });
+  return json(200, { blocked: false, to: message.to, id: result.id ?? null, followUp });
 };

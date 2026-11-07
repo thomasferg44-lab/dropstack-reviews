@@ -21,7 +21,7 @@ export function reviewUrlStatus(value) {
 export const REVIEW_URL_WARNINGS = {
   missing: {
     title: "Customer links currently lead nowhere",
-    body: "Set your Google review link. Until then, anyone who opens a review request sees an apology and your WhatsApp number instead of the Google page.",
+    body: "Set your Google review link. Until then, anyone who opens a review request sees an apology (and your WhatsApp number, if it's set) instead of the Google page. Requests to real customers are held back until it's set, so nobody's one ask is wasted.",
   },
   invalid: {
     title: "Your review link isn't a working web address",

@@ -21,7 +21,7 @@ let level = "unknown";
 // the local test backend. Kept out of this module's imports so it stays
 // importable without Vite.
 let client = null;
-export const useClient = (c) => { client = c; level = "unknown"; };
+export const setClient = (c) => { client = c; level = "unknown"; };
 export const getSchemaLevel = () => level;
 const cols = (base, extra) => (level === "v2" ? base + extra : base);
 
@@ -94,7 +94,13 @@ export async function importCustomers(rows) {
 // ---- jobs ------------------------------------------------------------------------
 // A date-only input has no timezone. Store it as midday SA time so the day shown
 // never shifts when rendered back.
-export const dateToIso = (d) => (d ? new Date(`${d}T12:00:00+02:00`).toISOString() : null);
+// Today's date means "just now", so a job finished this morning is never
+// treated as dated in the future (and dropped from Ask now) until noon.
+export const dateToIso = (d, now = new Date()) => {
+  if (!d) return null;
+  if (d === new Date(now.getTime() + 2 * 3600000).toISOString().slice(0, 10)) return now.toISOString();
+  return new Date(`${d}T12:00:00+02:00`).toISOString();
+};
 export async function saveJob(input) {
   const row = { customer_id: input.customerId, description: String(input.description ?? "").trim() || null, completed_at: input.completedAt ? dateToIso(input.completedAt) : null };
   const q = input.id ? client.from("reviews_jobs").update(row).eq("id", input.id) : client.from("reviews_jobs").insert(row);

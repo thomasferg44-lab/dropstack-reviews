@@ -1,10 +1,18 @@
 import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
+import { applyBrand } from "./lib/brand.js";
+import { supabase } from "./lib/supabase.js";
+import { setClient } from "./lib/db.js";
+import { companyConfig } from "../companyConfig.js";
 import "./index.css";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+applyBrand(companyConfig);
+setClient(supabase);
+document.title = companyConfig.businessName;
+
+createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -25,9 +25,50 @@ Secrets live in `.env` (copy from `.env.example`). Never commit it.
 
 All client-specific values live in `companyConfig.js`. A new client deploy is: fork/copy this repo, swap `companyConfig.js`, create a fresh Supabase project and run `schema.sql`, connect a new Netlify site, point the domain. No code changes.
 
+## November 2026 compete pass
+
+See `REPORT.md` for the full write-up and gate results.
+
+- **Database patch (not applied live):** `supabase/patches/2026-11-05-compete-upgrades.sql`.
+  Additive, idempotent, one transaction; already folded into `schema.sql`. After running
+  it, run `verify-rls.sql` and `verify-compete-upgrades.sql`; every row must be PASS.
+  Until the patch is applied the dashboard still works (ask, send, history, link opens) and
+  shows feedback / follow-ups / demo / showcase as waiting for the database update.
+- **Local SQL harness:** `supabase/local-test/README.md` (PGlite, nothing reaches a database).
+- **Health check:** `GET /api/health` returns booleans only (database reachable, config
+  present, email key present, real sends on). The status line in the dashboard uses it.
+  Nothing schedules a ping; point an uptime monitor at it if you want one.
+- **Demo mode:** Setup (or the first-run checklist) loads a plumber / landscaper /
+  electrician week; every row is `is_demo` and "Remove demo data" deletes exactly those.
+  Set `demo.allowed: false` in `companyConfig.js` once a client's real data is in.
+- **Cross-tool lookup:** `/customers?phone=+27...` opens that customer's record (the
+  suite joins on phone number).
+
+### Showcase strip embed (for the Mini-site)
+
+Featured reviews are hand-entered: `showcase.reviews` in `companyConfig.js`, or
+Setup -> "Feature a review" in the dashboard. Copy real reviews from the Google profile
+only. Demo samples are never served publicly. Paste this where the strip should appear:
+
+```html
+<script src="https://YOUR-REVIEWS-SITE/showcase.js" async></script>
+<!-- options: data-target="#reviews"  data-max-width="1080"  data-title="Customer reviews" -->
+```
+
+It frames `/showcase` (same pattern as Lead Capture's `embed.js`), sizes itself, takes the
+client's brand colour, and takes up no space at all while there are no reviews.
+
+### Gate scripts
+
+`tools/gates/` (not part of the app): `build-variants.sh` (mock-backend builds for the
+shipped config and `configs/demo-config-2.js`), `gate2.mjs` (Gate 2 + 3 flows at 390px and
+desktop, plus screenshots), `baseline.mjs` (Gate 0 on v1), `lh.mjs` (Lighthouse + Fast 3G),
+`pack.py` (review pack). They borrow `playwright-core` from another local project; nothing
+is added to this repo's dependencies.
+
 ## Tests
 
-`npm test` runs 68 offline checks with Node's built-in runner. No test
+`npm test` runs 127 offline checks (68 before the compete pass) with Node's built-in runner. No test
 dependency, nothing sent, nothing written to a database.
 
 | Suite | Covers |

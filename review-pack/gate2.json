@@ -1,0 +1,258 @@
+{
+  "results": {
+    "A-390": {
+      "rows": [
+        {
+          "name": "A1 Sign-in: wrong password gives an inline plain-language error",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A2 Today, empty: loud reviewUrl warning, checklist 0 of 3, one primary action per empty state",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A3 Timed first value: checklist -> confirm details -> load demo -> ask first customer -> WhatsApp opened",
+          "ok": true,
+          "detail": "7.4s (scripted; includes 60ms/call simulated latency)"
+        },
+        {
+          "name": "A4 Populated Today: DEMO badge, hero strip labelled as including demo, follow-up queue has 2",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A5 Landing with empty reviewUrl: designed unavailable state, no dead link, no fake number",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A6 Real customer + empty reviewUrl: send held back with the reason (demo customers stay sendable)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A7 CSV import of a messy file: every row imported or listed with a reason",
+          "ok": true,
+          "detail": "6 ready to import, 2 with a note1 skipped, each with a reason below -> 6 customers imported.1 row was skipped before import (reasons listed on the previous step)."
+        },
+        {
+          "name": "A8 Remove demo data: one tap, exactly the demo rows go, real rows stay",
+          "ok": true,
+          "detail": "7 real customers kept"
+        }
+      ],
+      "errors": [],
+      "blocked": []
+    },
+    "B-390": {
+      "rows": [
+        {
+          "name": "B1 Job done -> request offered in the same motion, WhatsApp preselected, personal prefill",
+          "ok": true,
+          "detail": "Hi Thandi, thanks for choosing Kloofnek Electrical for the DB board upgrade today. If you have a minute, a quick Google review would mean a lot to us: http://localhost:4402/r/aoR7NU7u5cr3RfzYuw-ZD-sG"
+        },
+        {
+          "name": "B2 Customer opens the link: branded landing, Google button points at the config URL",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B3 Lowest rating: Google button unchanged and still first; WhatsApp line to the owner ADDED",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B4 Connection drops mid-feedback: words kept on the phone, sent when back",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B5 Google tap beacons before Google opens (recorded as a tap, not a review)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B6 Owner sees it: Activity 'Went to Google', feedback + recovery reply draft, hero from real rows",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B7 Email channel: sent via the server function, logged as email",
+          "ok": true,
+          "detail": "Quick favour from Kloofnek Electrical?"
+        },
+        {
+          "name": "B8 ONE follow-up: WhatsApp follow-up recorded, customer leaves the queue, a second is refused",
+          "ok": true,
+          "detail": "Sipho Dlamini"
+        },
+        {
+          "name": "B9 Email follow-up sends the follow-up template once; the function refuses a second",
+          "ok": true,
+          "detail": "second attempt -> 409"
+        },
+        {
+          "name": "B10 Showcase: demo samples never public; a featured review shows in the widget on a plain page",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B11 Gate 3 config swap: no leftover default branding on any dashboard screen",
+          "ok": true,
+          "detail": "Kloofnek name, KE monogram, #0F7B5F, WhatsApp 27000000999, test review URL"
+        },
+        {
+          "name": "B12 Cross-tool lookup by phone lands on the customer's record, not a homepage",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "errors": [],
+      "blocked": []
+    },
+    "A-desktop": {
+      "rows": [
+        {
+          "name": "A1 Sign-in: wrong password gives an inline plain-language error",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A2 Today, empty: loud reviewUrl warning, checklist 0 of 3, one primary action per empty state",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A3 Timed first value: checklist -> confirm details -> load demo -> ask first customer -> WhatsApp opened",
+          "ok": true,
+          "detail": "3.7s (scripted; includes 60ms/call simulated latency)"
+        },
+        {
+          "name": "A4 Populated Today: DEMO badge, hero strip labelled as including demo, follow-up queue has 2",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A5 Landing with empty reviewUrl: designed unavailable state, no dead link, no fake number",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A6 Real customer + empty reviewUrl: send held back with the reason (demo customers stay sendable)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "A7 CSV import of a messy file: every row imported or listed with a reason",
+          "ok": true,
+          "detail": "6 ready to import, 2 with a note1 skipped, each with a reason below -> 6 customers imported.1 row was skipped before import (reasons listed on the previous step)."
+        },
+        {
+          "name": "A8 Remove demo data: one tap, exactly the demo rows go, real rows stay",
+          "ok": true,
+          "detail": "7 real customers kept"
+        }
+      ],
+      "errors": [],
+      "blocked": []
+    },
+    "B-desktop": {
+      "rows": [
+        {
+          "name": "B1 Job done -> request offered in the same motion, WhatsApp preselected, personal prefill",
+          "ok": true,
+          "detail": "Hi Thandi, thanks for choosing Kloofnek Electrical for the DB board upgrade today. If you have a minute, a quick Google review would mean a lot to us: http://localhost:4402/r/VsrefUlC07nMLIZu0f5FjOL2"
+        },
+        {
+          "name": "B2 Customer opens the link: branded landing, Google button points at the config URL",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B3 Lowest rating: Google button unchanged and still first; WhatsApp line to the owner ADDED",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B4 Connection drops mid-feedback: words kept on the phone, sent when back",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B5 Google tap beacons before Google opens (recorded as a tap, not a review)",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B6 Owner sees it: Activity 'Went to Google', feedback + recovery reply draft, hero from real rows",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B7 Email channel: sent via the server function, logged as email",
+          "ok": true,
+          "detail": "Quick favour from Kloofnek Electrical?"
+        },
+        {
+          "name": "B8 ONE follow-up: WhatsApp follow-up recorded, customer leaves the queue, a second is refused",
+          "ok": true,
+          "detail": "Sipho Dlamini"
+        },
+        {
+          "name": "B9 Email follow-up sends the follow-up template once; the function refuses a second",
+          "ok": true,
+          "detail": "second attempt -> 409"
+        },
+        {
+          "name": "B10 Showcase: demo samples never public; a featured review shows in the widget on a plain page",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "B11 Gate 3 config swap: no leftover default branding on any dashboard screen",
+          "ok": true,
+          "detail": "Kloofnek name, KE monogram, #0F7B5F, WhatsApp 27000000999, test review URL"
+        },
+        {
+          "name": "B12 Cross-tool lookup by phone lands on the customer's record, not a homepage",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "errors": [],
+      "blocked": []
+    }
+  },
+  "timings": {
+    "first-value-390": 7422,
+    "first-value-desktop": 3694
+  },
+  "resend": [
+    {
+      "to": [
+        "pieter.van.der.m@example.com"
+      ],
+      "subject": "Quick favour from Kloofnek Electrical?"
+    },
+    {
+      "to": [
+        "lerato.n@example.com"
+      ],
+      "subject": "One last thing from Kloofnek Electrical"
+    },
+    {
+      "to": [
+        "pieter.van.der.m@example.com"
+      ],
+      "subject": "Quick favour from Kloofnek Electrical?"
+    },
+    {
+      "to": [
+        "lerato.n@example.com"
+      ],
+      "subject": "One last thing from Kloofnek Electrical"
+    }
+  ]
+}

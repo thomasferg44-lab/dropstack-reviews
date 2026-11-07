@@ -1,0 +1,126 @@
+{
+  "token": "seeded demo request",
+  "landing": {
+    "runs": [
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 915,
+        "fcp": 915,
+        "tbt": 0,
+        "cls": 0,
+        "weightKB": 9,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 639,
+        "fcp": 625,
+        "tbt": 14,
+        "cls": 0,
+        "weightKB": 3,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 636,
+        "fcp": 623,
+        "tbt": 11,
+        "cls": 0,
+        "weightKB": 3,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      }
+    ],
+    "lowestPerf": 100
+  },
+  "dashboard-today": {
+    "runs": [
+      {
+        "perf": 99,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 1556,
+        "fcp": 1556,
+        "tbt": 47,
+        "cls": 0,
+        "weightKB": 112,
+        "lcpEl": "<p class=\"mt-4 text-[12px] text-ink-3\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 647,
+        "fcp": 627,
+        "tbt": 1,
+        "cls": 0,
+        "weightKB": 1,
+        "lcpEl": "<p class=\"mt-4 text-[12px] text-ink-3\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 646,
+        "fcp": 628,
+        "tbt": 0,
+        "cls": 0,
+        "weightKB": 1,
+        "lcpEl": "<p class=\"mt-4 text-[12px] text-ink-3\">",
+        "failedA11y": []
+      }
+    ],
+    "lowestPerf": 99
+  },
+  "landing_fast3g": {
+    "runs": [
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 710,
+        "fcp": 710,
+        "tbt": 0,
+        "cls": 0,
+        "weightKB": 3,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 719,
+        "fcp": 719,
+        "tbt": 0,
+        "cls": 0,
+        "weightKB": 3,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      },
+      {
+        "perf": 100,
+        "a11y": 100,
+        "bp": 100,
+        "lcp": 705,
+        "fcp": 705,
+        "tbt": 0,
+        "cls": 0,
+        "weightKB": 3,
+        "lcpEl": "<p class=\"lede\">",
+        "failedA11y": []
+      }
+    ],
+    "worstLcp": 719
+  }
+}

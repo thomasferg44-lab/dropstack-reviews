@@ -1,7 +1,7 @@
 # Review Engine: compete pass report (design spec §6 format)
 
-Branch `compete/reviews-upgrades`, cut from `v1-review-engine` at `238cdc7`. Local build and tests only.
-**Not pushed, not deployed, and no live database changes.** The schema patch is a file. Nothing was sent to a real person.
+Branch `compete/reviews-upgrades`, cut from `v1-review-engine` at `238cdc7`. Built and tested locally, then deployed on Nov 8 2026 with Tom's approval. See **§12 Deploy**.
+The schema patch was applied to dropstack-dev and verified there, nothing else in the live database was changed, and nothing was sent to a real person.
 
 The test for every decision was the one in Tom's Nov 5 addendum: does this make a real SA service business say yes faster?
 
@@ -210,8 +210,9 @@ No dedicated 44px or contrast measuring script was run this pass. Accessibility 
 
 ## 10. Not done / blocked
 
-- **BLOCKED-BY-PATCH:** applying `2026-11-05-compete-upgrades.sql` to dropstack-dev, then running both verify scripts there. Until then, live shows the core loop only.
-- Push, deploy and Gate 6 (Ziggy's live re-check) are all waiting on Tom.
+- ~~BLOCKED-BY-PATCH~~ Done on Nov 8: the patch is applied and both verify scripts pass on dropstack-dev (§12).
+- ~~Push, deploy~~ Done on Nov 8 (§12). Gate 6 (Ziggy's live signed-in re-check) is still open.
+- **The demo `reviewUrl` is still EMPTY on live** (§12).
 - Mini-site wiring of the embed: snippet and README are ready, but the change goes in the Mini-site repo.
 - Shared-login verification against live Auth: not possible without live calls.
 
@@ -222,3 +223,42 @@ Honestly, on breadth and on automation:
 - **NiceJob** auto-sends multi-touch SMS and email sequences, plugs into Jobber, ServiceM8 and QuickBooks so jobs flow in without typing, and has polished social proof widgets that pull reviews automatically. Our showcase is hand-entered, our jobs are logged by hand or CSV, and every WhatsApp send is a deliberate tap.
 
 Where we win is narrower but real: the WhatsApp-first, personal, one-tap ask in the channel our customers actually answer, a compliant landing that loads in under a second on Fast 3G, a done-for-you setup, and a tenth of the price. If the job → WhatsApp → Google loop is what an SA tradesperson needs, we compete. If they need to *see and manage* their reputation across platforms, we do not yet.
+
+
+## 12. Deploy (Nov 8 2026, approved by Tom)
+
+**Schema patch on dropstack-dev (`idazmyjfroigagmjtekm`).**
+- Before the patch, live had the v1 schema: 3 `reviews_` tables, with 1 customer, 1 job and 1 request.
+- Applied `supabase/patches/2026-11-05-compete-upgrades.sql` as one transaction via `supabase db query --linked`. It returned no errors.
+- `verify-rls.sql` passed 15/15 and `verify-compete-upgrades.sql` passed 14/14 on live.
+- Both scripts delete their own fixtures. After they ran, the counts were back to 1 customer, 1 job and 1 request, with 0 showcase rows and 0 demo rows.
+- Only `reviews_` objects were touched, and no other tool's tables.
+
+**Push.**
+- `compete/reviews-upgrades` was pushed to origin at **`d90c6ae7c5971d1959b6f7be8e771dbd142b9690`**. It contains the build; this report update is a docs-only commit on top.
+- The deploy went out the same way as before. Netlify's production branch for this site is `v1-review-engine`, so `origin/v1-review-engine` was fast-forwarded `238cdc7..d90c6ae`. `main` was not touched.
+
+**Deploy proof.**
+- Netlify deploy **`6af12798cb41695c5a61ca1d`**, site `dropstack-reviews`.
+- Context `production`, commit `d90c6ae`, state `ready`, published at `2026-11-09T01:53:45Z` (UTC).
+- Deploy URL: https://v1-review-engine--dropstack-reviews.netlify.app. Live at https://reviews.dropstack.co.
+- Admin: https://app.netlify.com/projects/dropstack-reviews/deploys/6af12798cb41695c5a61ca1d
+
+**Live verification.** This was read-only, with no sign-in and no writes, run at 390px and 1280px.
+- `GET /api/health` returned 200 with database reachable (381 ms) and config complete. `reviewUrl`: false. `whatsappNumber`: false. `fromEmail`: false. `resendKey`: false.
+- The served bundle `/assets/main-Cmd3waVK.js` is the new build: it contains the WhatsApp-first composer, Follow up, "Load demo" and "Remove demo data", "Went to Google", and `is_demo` / `followed_up_at`. The mock backend is absent (`dropstack-mock-db`: false).
+- The sign-in page shows the new subtitle "Sign in to ask for reviews". There were no page errors at either width.
+- `/r/<dummy token>` shows the designed "Our review page isn't ready yet" page for Quillbrook Plumbing. This is correct while `reviewUrl` is empty.
+- `/showcase` is empty, which is correct with no published reviews. `/showcase.js` returned 200 as `application/javascript`.
+- **Not verified live:** the signed-in flow (composer, loading demo data). I have no owner password, and loading demo data would write rows, which is outside "no live DB changes beyond the patch". Gate 6 should do it while signed in as the owner.
+
+**FLAG: the demo `reviewUrl` is empty.**
+- Left as-is per the task; no URL was invented.
+- Until Tom sets it in `companyConfig.js`, every live customer link lands on the "isn't ready yet" page and real sends are held back.
+- Demo customers can still be sent to once demo data is loaded.
+- `whatsappNumber` and `fromEmail` are also empty.
+
+**FLAG: real sends are switched on in Netlify.**
+- Health reports `realSendsEnabled: true` because the production environment has `DEV_BLOCK_REAL_SENDS=false`. That was already set before this deploy and was not changed.
+- No `RESEND_API_KEY` is set, so email cannot actually send.
+- If Tom adds the key before the demo is ready, set `DEV_BLOCK_REAL_SENDS=true` first.
